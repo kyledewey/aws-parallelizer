@@ -31,6 +31,9 @@ public class AWSParameters extends CloudParameters {
     // begin constants
     public static final int MAX_NUMBER_MESSAGES = 1;
     public static final String ENVIRONMENT_ZIP = "environment.zip";
+    public static final int NUM_RETRIES = 7;
+    public static final int START_SECONDS_TO_RETRY = 1;
+    public static final String NO_SUCH_KEY = "NoSuchKey";
     // end constants
 
     // begin instance variables
@@ -165,12 +168,40 @@ public class AWSParameters extends CloudParameters {
     /**
      * Gets the given file from the given bucket
      */
-    public void getObject( String bucket,
-			   String fileName,
-			   File localFile ) {
+    public void getObjectNoRetry( String bucket,
+				  String fileName,
+				  File localFile ) {
 	getS3().getObject( new GetObjectRequest( bucket,
 						 fileName ),
 			   localFile );
+    }
+
+    /**
+     * This will do some retries.
+     * Due to eventual consistency, this sometimes fails to get an object
+     * that should be possible to get.
+     */
+    public void getObject( String bucket,
+			   String fileName,
+			   File localFile ) {
+	int seconds = START_SECONDS_TO_RETRY;
+	for( int x = 0; x < NUM_RETRIES; x++ ) {
+	    try {
+		getObjectNoRetry( bucket, fileName, localFile );
+		break;
+	    } catch ( AmazonServiceException e ) {
+		if ( e.getErrorCode().equals( NO_SUCH_KEY ) ) { //HACK
+		    try {
+			Thread.sleep( seconds );
+		    } catch ( InterruptedException e1 ) {
+			throw e;
+		    }
+		    seconds *= 2;
+		} else {
+		    throw e;
+		}
+	    }
+	}
     }
 
     /**
