@@ -22,7 +22,7 @@ public class VisibilityTimeoutRunnable {
 	    new Thread( new Runnable() {
 		    public void run() {
 			boolean shouldRun = true;
-			while( shouldRun ) {
+			while( shouldRun && !Thread.currentThread().interrupted() ) {
 			    try {
 				Thread.sleep( worker.parameters.visibility * 1000 - MILLISECONDS_IN_MINUTE );
 				updateVisibilityTimeout();
