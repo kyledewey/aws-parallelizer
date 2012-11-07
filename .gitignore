@@ -1,3 +1,5 @@
 parameters.txt
 *.class
 aws-java-sdk*
+*~
+\#*\#
