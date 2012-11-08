@@ -34,6 +34,7 @@ public abstract class Parameters {
     public static final String QUEUE_URL_ID = "queueURL";
     public static final String ENVIRONMENT_BUCKET_NAME_ID = "environmentBucket";
     public static final String ENVIRONMENT_PREFIX_ID = "environmentPrefix";
+    public static final String ENVIRONMENT_ZIP_FILE_ID = "environmentZip";
     public static final String ANALYSIS_PROGRAM_NAME_ID = "analysisProgram";
     public static final String ACCESS_KEY_ID = "accessKey";
     public static final String SECRET_KEY_ID = "secretKey";
@@ -46,6 +47,7 @@ public abstract class Parameters {
 	    add( QUEUE_URL_ID );
 	    add( ENVIRONMENT_BUCKET_NAME_ID );
 	    add( ENVIRONMENT_PREFIX_ID );
+	    add( ENVIRONMENT_ZIP_FILE_ID );
 	    add( ANALYSIS_PROGRAM_NAME_ID );
 	    add( ACCESS_KEY_ID );
 	    add( SECRET_KEY_ID );
@@ -78,6 +80,11 @@ public abstract class Parameters {
     public static final String VISIBILITY_TIMEOUT_ID = "visibilityTimeout";
     public static final int DEFAULT_VISIBILITY_TIMEOUT = 60 * 10; // 10 minutes
 
+    // number of threads to use
+    // 0 means use the max available
+    public static final String NUM_THREADS_ID = "numThreads";
+    public static final int DEFAULT_NUM_THREADS = 0;
+
     public static final Map< String, String > OPTIONAL_PARAMS =
 	new HashMap< String, String >() {
 	{
@@ -93,6 +100,8 @@ public abstract class Parameters {
 		 DEFAULT_INSTANCE_TYPE );
 	    put( VISIBILITY_TIMEOUT_ID,
 		 Integer.toString( DEFAULT_VISIBILITY_TIMEOUT ) ); 
+	    put( NUM_THREADS_ID, 
+		 Integer.toString( DEFAULT_NUM_THREADS ) );
 	}
     };
     // end constants
@@ -109,6 +118,41 @@ public abstract class Parameters {
 	parameters = getParameters();
 	validateParams();
 	addOptionalParams( parameters );
+    }
+
+    public int paramOrDefault( String key, int defaultValue ) {
+	int retval = defaultValue;
+	try {
+	    retval = Integer.parseInt( getParam( key ) );
+	} catch ( NumberFormatException e ) {
+	} catch ( ParameterException e ) {
+	    e.printStackTrace();
+	    System.err.println( "IMPOSSIBLE PARAMETER EXCEPTION: " + e.toString() );
+	}
+
+	return retval;
+    }
+
+    public int paramOrDefaultPositive( String key,
+				       int defaultValue,
+				       int ifNotPositive ) {
+	int recorded = paramOrDefault( key, defaultValue );
+	if ( recorded <= 0 ) {
+	    recorded = ifNotPositive;
+	}
+	return recorded;
+    }
+
+    public int numThreads() {
+	return paramOrDefaultPositive( NUM_THREADS_ID,
+				       DEFAULT_NUM_THREADS,
+				       Runtime.getRuntime().availableProcessors() );
+    }
+
+    public int visibility() {
+	return paramOrDefaultPositive( VISIBILITY_TIMEOUT_ID,
+				       DEFAULT_VISIBILITY_TIMEOUT,
+				       DEFAULT_VISIBILITY_TIMEOUT );
     }
 
     /**

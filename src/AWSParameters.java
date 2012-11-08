@@ -30,7 +30,6 @@ import java.util.*;
 public class AWSParameters extends CloudParameters {
     // begin constants
     public static final int MAX_NUMBER_MESSAGES = 1;
-    public static final String ENVIRONMENT_ZIP = "environment.zip";
     public static final int NUM_RETRIES = 7;
     public static final int START_SECONDS_TO_RETRY = 1;
     public static final String NO_SUCH_KEY = "NoSuchKey";
@@ -48,11 +47,7 @@ public class AWSParameters extends CloudParameters {
 	credentials = makeCredentials();
 	s3 = makeS3();
 	sqs = makeSQS();
-	try {
-	    visibility = Integer.parseInt( getParam( VISIBILITY_TIMEOUT_ID ) );
-	} catch ( NumberFormatException e ) {
-	    visibility = DEFAULT_VISIBILITY_TIMEOUT;
-	}
+	visibility = visibility();
     }
 	
     public String getInputBucket() {
@@ -77,6 +72,10 @@ public class AWSParameters extends CloudParameters {
     
     public String getAnalysisProgramName() {
 	return param( ANALYSIS_PROGRAM_NAME_ID );
+    }
+
+    public String getEnvironmentZip() {
+	return param( ENVIRONMENT_ZIP_FILE_ID );
     }
 
     /**
@@ -256,9 +255,9 @@ public class AWSParameters extends CloudParameters {
     public void prepEnvironment() throws IOException {
 	Download.downloadPrefix( getS3(),
 				 getEnvironmentBucket(),
-				 ENVIRONMENT_ZIP );
+				 getEnvironmentZip() );
 	executeProgram( new String[]{ "unzip", 
-				      ENVIRONMENT_ZIP } );
+				      getEnvironmentZip() } );
 	makeExecutableInDir( getEnvironmentPrefix() );
     }
 
@@ -302,5 +301,12 @@ public class AWSParameters extends CloudParameters {
 	for( File current : new File( dirName ).listFiles() ) {
 	    makeExecutable( current.getPath() );
 	}
+    }
+
+    public static AWSParameters makeInitialAWSParameters() 
+	throws ParameterException, IOException {
+	AWSParameters retval = new AWSParameters();
+	retval.prepEnvironment();
+	return retval;
     }
 } // AWSParameters 

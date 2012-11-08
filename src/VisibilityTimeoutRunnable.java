@@ -3,11 +3,16 @@ import com.amazonaws.services.sqs.model.*;
 import java.io.IOException;
 
 public class VisibilityTimeoutRunnable {
+    // begin constants
     public static final int MILLISECONDS_IN_MINUTE = 1000 * 60;
-    private ClientWorker worker;
+    // end constants
+
+    // begin instance variables
+    private Worker worker;
     private boolean done;
     private Message message;
     private Thread timer;
+    // end instance variables
 
     public void updateVisibilityTimeout() {
 	worker.parameters.sqs.changeMessageVisibility( new ChangeMessageVisibilityRequest( worker.parameters.param( Parameters.QUEUE_URL_ID ), 
@@ -15,7 +20,7 @@ public class VisibilityTimeoutRunnable {
 											   worker.parameters.visibility ) );
     }
 
-    public VisibilityTimeoutRunnable( final ClientWorker worker, Message message ) {
+    public VisibilityTimeoutRunnable( final Worker worker, Message message ) {
 	this.worker = worker;
 	this.message = message;
 	timer = 
@@ -37,10 +42,10 @@ public class VisibilityTimeoutRunnable {
     public void run() throws IOException {
 	timer.start();
 	worker.processFile( message.getBody() );
-	worker.doneWithFile( message );
 	timer.interrupt();
 	try {
 	    timer.join();
+	    worker.doneWithFile( message );
 	} catch ( InterruptedException e ) {}
     }
 }

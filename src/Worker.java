@@ -1,34 +1,17 @@
-import com.amazonaws.*;
-import com.amazonaws.auth.*;
-import com.amazonaws.services.s3.*;
-import com.amazonaws.services.s3.model.*;
-import com.amazonaws.services.sqs.*;
-import com.amazonaws.services.sqs.model.*;
-
 import java.io.*;
-import java.net.*;
 import java.util.*;
 
-public class ClientWorker {
+import com.amazonaws.services.sqs.model.*;
+
+public abstract class Worker {
     // begin instance variables
-    public AWSParameters parameters;
+    public final AWSParameters parameters;
     // end instance variables
-    
-    /**
-     * Creates a worker that uses the given parameters.
-     */
-    public ClientWorker( AWSParameters parameters ) throws IOException {
+
+    public Worker( AWSParameters parameters ) {
 	this.parameters = parameters;
-	parameters.prepEnvironment();
     }
-
-    /**
-     * Automatically gets all parameters
-     */
-    public ClientWorker() throws ParameterException, IOException {
-	this( new AWSParameters() );
-    }
-
+    
     /**
      * Gets the next file to process.
      * If there are none, this returns null.
@@ -71,23 +54,5 @@ public class ClientWorker {
 	inputFile.delete();
     }
 
-    public void processFiles() throws IOException {
-	Message nextFile;
-
-	while( ( nextFile = nextFile() ) != null ) {
-	    new VisibilityTimeoutRunnable( this, nextFile ).run();
-	}
-    }
-
-    public static void main( String[] args ) {
-	try {
-	    new ClientWorker().processFiles();
-	} catch ( ParameterException e ) {
-	    e.printStackTrace();
-	    System.err.println( e );
-	} catch ( IOException e ) {
-	    e.printStackTrace();
-	    System.err.println( e );
-	}
-    }
+    public abstract void processFiles() throws IOException;
 }
