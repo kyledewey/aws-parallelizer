@@ -51,9 +51,9 @@ public class ClientWorker {
     }
 
     public void processFile( String fileName ) throws IOException {
-	parameters.getObject( fileName,
-			      new File( parameters.getEnvironmentPrefix(),
-					fileName ) );
+	File inputFile = new File( parameters.getEnvironmentPrefix(),
+				   fileName );
+	parameters.getObject( fileName, inputFile );
 	String outputFileName = parameters.doAnalysis( fileName );
 	if ( !outputFileName.equals( "" ) ) {
 	    File outputFile = new File( parameters.getEnvironmentPrefix(),
@@ -68,6 +68,7 @@ public class ClientWorker {
 		outputFile.delete();
 	    }
 	}
+	inputFile.delete();
     }
 
     public void processFiles() throws IOException {
