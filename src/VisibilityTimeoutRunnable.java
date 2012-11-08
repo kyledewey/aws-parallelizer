@@ -39,13 +39,27 @@ public class VisibilityTimeoutRunnable {
 		} );
     }
     
-    public void run() throws IOException {
+    public void run() {
+	boolean errorOccurred = false;
 	timer.start();
-	worker.processFile( message.getBody() );
-	timer.interrupt();
+	try {
+	    worker.processFile( message.getBody() );
+	} catch ( IOException e ) {
+	    // try to go to the next one
+	    // don't mark as complete though; it could be a transient problem
+	    errorOccurred = true;
+	} finally {
+	    timer.interrupt();
+	}
+
 	try {
 	    timer.join();
-	    worker.doneWithFile( message );
-	} catch ( InterruptedException e ) {}
+	    if ( !errorOccurred ) {
+		worker.doneWithFile( message );
+	    }
+	} catch ( InterruptedException e ) {
+	    // the timer didn't join in time
+	    // give up on it
+	}
     }
 }

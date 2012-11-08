@@ -10,7 +10,7 @@ public class SequentialWorker extends Worker {
 	super( parameters );
     }
 
-    public void processFiles() throws IOException {
+    public void processFiles() {
 	Message nextFile;
 
 	while( ( nextFile = nextFile() ) != null ) {

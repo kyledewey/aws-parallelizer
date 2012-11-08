@@ -54,5 +54,5 @@ public abstract class Worker {
 	inputFile.delete();
     }
 
-    public abstract void processFiles() throws IOException;
+    public abstract void processFiles();
 }

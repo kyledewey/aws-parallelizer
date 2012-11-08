@@ -33,7 +33,7 @@ public class SMPWorker extends Worker {
 	};
     }
 
-    public void processFiles() throws IOException {
+    public void processFiles() {
 	for( int x = 0; x < numThreads; x++ ) {
 	    executor.submit( makeWorker() );
 	}
