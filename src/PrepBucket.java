@@ -22,7 +22,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
-public class MakeBucket {
+public class PrepBucket {
     public static File[] makeFilesFromArgs( String[] args ) {
 	File[] retval = new File[ args.length - 1 ];
 	for( int x = 1; x < args.length; x++ ) {
@@ -37,8 +37,11 @@ public class MakeBucket {
 	    System.exit( 1 );
 	}
 	try {
-	    AmazonS3 s3 = CredentialParameters.makeParameters().getS3();
-	    s3.createBucket( args[ 0 ] );
+	    CredentialParameters params = CredentialParameters.makeParameters();
+	    AmazonS3 s3 = params.getS3();
+	    if ( !params.doesBucketExist( args[ 0 ] ) ) {
+		s3.createBucket( args[ 0 ] );
+	    }
 	    for( File current : makeFilesFromArgs( args ) ) {
 		s3.putObject( args[ 0 ], 
 			      current.getName(),
