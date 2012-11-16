@@ -37,8 +37,7 @@ public class DeleteBucket {
 	}
 
 	try {
-	    AmazonS3 s3 = new AmazonS3Client( LocalParameters.makeParameters().makeCredentials() );
-	    
+	    AmazonS3 s3 = CredentialParameters.makeParameters().getS3();
 	    ObjectListing listing = 
 		s3.listObjects( new ListObjectsRequest().withBucketName( args[ 0 ] ) );
 	    

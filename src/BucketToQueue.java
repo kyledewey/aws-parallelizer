@@ -45,12 +45,9 @@ public class BucketToQueue {
 	}
 
 	try {
-	    AWSCredentials credentials = 
-		LocalParameters.makeParameters().makeCredentials();
-	    AmazonS3 s3 = new AmazonS3Client( credentials );
-	    AmazonSQS sqs = new AmazonSQSClient( credentials );
-	    System.out.println( "Queue URL: " + bucketToQueue( s3,
-							       sqs,
+	    CredentialParameters params = CredentialParameters.makeParameters();
+	    System.out.println( "Queue URL: " + bucketToQueue( params.getS3(),
+							       params.getSQS(),
 							       args[ 0 ],
 							       args[ 1 ] ) );
 	} catch ( Exception e ) {

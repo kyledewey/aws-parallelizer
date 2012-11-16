@@ -53,7 +53,7 @@ public class ListBucket {
 	}
 
 	try {
-	    AmazonS3 s3 = new AmazonS3Client( LocalParameters.makeParameters().makeCredentials() );
+	    AmazonS3 s3 = CredentialParameters.makeParameters().getS3();
 	    for( String current : listBucket( s3, args[ 0 ] ) ) {
 		System.out.println( current );
 	    }

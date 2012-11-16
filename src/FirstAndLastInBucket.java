@@ -54,7 +54,7 @@ public class FirstAndLastInBucket {
 	}
 
 	try {
-	    AmazonS3 s3 = new AmazonS3Client( LocalParameters.makeParameters().makeCredentials() );
+	    AmazonS3 s3 = CredentialParameters.makeParameters().getS3();
 	    List< Date > lastModified = listBucket( s3, args[ 0 ] );
 	    Collections.sort( lastModified );
 	    if ( lastModified.size() == 0 ) {

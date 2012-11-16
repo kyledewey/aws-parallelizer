@@ -1,17 +1,3 @@
-/*
- * AWSParameters.java
- *
- * Version:
- *     $Id: AWSParameters.java,v 1.1 2012/11/06 01:12:28 kyle Exp $
- *
- * Revisions:
- *      $Log: AWSParameters.java,v $
- *      Revision 1.1  2012/11/06 01:12:28  kyle
- *      Initial revision
- *
- *
- */
-
 import com.amazonaws.*;
 import com.amazonaws.auth.*;
 import com.amazonaws.services.s3.*;
@@ -20,36 +6,101 @@ import com.amazonaws.services.sqs.*;
 import com.amazonaws.services.sqs.model.*;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
+
 /**
- * Like Parameters, but it features certain helper routines that
- * are specific to AWS.
+ * Parameters that are needed on AWS.
  * @author Kyle Dewey
  */
-public class AWSParameters extends CloudParameters {
+public class AWSParameters extends CredentialParameters {
     // begin constants
+    // begin constants for parameters
+    // needed parameters
+    public static final String INPUT_BUCKET_NAME_ID = "inputBucket";
+    public static final String OUTPUT_BUCKET_NAME_ID = "outputBucket";
+    public static final String QUEUE_URL_ID = "queueURL";
+    public static final String ENVIRONMENT_BUCKET_NAME_ID = "environmentBucket";
+    public static final String ENVIRONMENT_PREFIX_ID = "environmentPrefix";
+    public static final String ENVIRONMENT_ZIP_FILE_ID = "environmentZip";
+    public static final String ANALYSIS_PROGRAM_NAME_ID = "analysisProgram";
+    public static final String ACCESS_KEY_ID = "accessKey";
+    public static final String SECRET_KEY_ID = "secretKey";
+
+    // optional parameters
+    // visibility timeout, in seconds
+    public static final String VISIBILITY_TIMEOUT_ID = "visibilityTimeout";
+    public static final int DEFAULT_VISIBILITY_TIMEOUT = 60 * 10; // 10 minutes
+
+    // number of threads to use
+    // 0 means use the max available
+    public static final String NUM_THREADS_ID = "numThreads";
+    public static final int DEFAULT_NUM_THREADS = 0;
+
+    // whether or not to shutdown on termination
+    public static final String SHOULD_SHUTDOWN_ID = "shouldShutdown";
+    public static final boolean DEFAULT_SHOULD_SHUTDOWN = true;
+
+    private static final Set< String > NEEDED_PARAMS = 
+	new HashSet< String >() { 
+	{
+	    add( INPUT_BUCKET_NAME_ID );
+	    add( OUTPUT_BUCKET_NAME_ID );
+	    add( QUEUE_URL_ID );
+	    add( ENVIRONMENT_BUCKET_NAME_ID );
+	    add( ENVIRONMENT_PREFIX_ID );
+	    add( ENVIRONMENT_ZIP_FILE_ID );
+	    add( ANALYSIS_PROGRAM_NAME_ID );
+	}
+    };
+
+    private static final Map< String, String > OPTIONAL_PARAMS =
+	new HashMap< String, String >() {
+	{
+	    put( VISIBILITY_TIMEOUT_ID,
+		 Integer.toString( DEFAULT_VISIBILITY_TIMEOUT ) );
+	    put( NUM_THREADS_ID,
+		 Integer.toString( DEFAULT_NUM_THREADS ) );
+	    put( SHOULD_SHUTDOWN_ID,
+		 Boolean.toString( DEFAULT_SHOULD_SHUTDOWN ) );
+	}
+    };
+    // end constants for parameters
+
+    // begin constants for processing
     public static final int MAX_NUMBER_MESSAGES = 1;
     public static final int NUM_RETRIES = 7;
     public static final int START_SECONDS_TO_RETRY = 1;
     public static final String NO_SUCH_KEY = "NoSuchKey";
+    // end constants for processing
     // end constants
 
     // begin instance variables
-    private AWSCredentials credentials;
-    private AmazonS3 s3;
-    public AmazonSQS sqs;
-    public int visibility;
+    private final int numThreads;
+    private final int visibilityTimeout;
+    private final boolean shouldShutdown;
     // end instance variables
 
-    public AWSParameters() throws ParameterException {
-	super();
-	credentials = makeCredentials();
-	s3 = makeS3();
-	sqs = makeSQS();
-	visibility = visibility();
+    public AWSParameters( Map< String, String > input ) throws ParameterException {
+	super( input );
+	numThreads = makeNumThreads();
+	visibilityTimeout = makeVisibilityTimeout();
+	shouldShutdown = makeShouldShutdown();
     }
-	
+
+    public Map< String, String > getOptionalParams() {
+	Map< String, String > retval = super.getOptionalParams();
+	retval.putAll( OPTIONAL_PARAMS );
+	return retval;
+    }
+
+    public Set< String > getNeededParams() {
+	Set< String > retval = super.getNeededParams();
+	retval.addAll( NEEDED_PARAMS );
+	return retval;
+    }
+
     public String getInputBucket() {
 	return param( INPUT_BUCKET_NAME_ID );
     }
@@ -78,39 +129,97 @@ public class AWSParameters extends CloudParameters {
 	return param( ENVIRONMENT_ZIP_FILE_ID );
     }
 
-    /**
-     * Makes a credentials object from these params
-     */
-    protected AWSCredentials makeCredentials() {
-	return new BasicAWSCredentials( param( ACCESS_KEY_ID ),
-					param( SECRET_KEY_ID ) );
+    protected int makeVisibilityTimeout() {
+	int retval = DEFAULT_VISIBILITY_TIMEOUT;
+	try {
+	    retval = Integer.parseInt( param( VISIBILITY_TIMEOUT_ID ) );
+	} catch ( NumberFormatException e ) {
+	    // shouldn't be possible
+	    e.printStackTrace();
+	    System.err.println( e );
+	}
+	return retval;
+    }
+
+    public int getVisibilityTimeout() {
+	return visibilityTimeout;
+    }
+
+    protected boolean makeShouldShutdown() {
+	return Boolean.parseBoolean( param( SHOULD_SHUTDOWN_ID ) );
+    }
+
+    public boolean getShouldShutdown() {
+	return shouldShutdown;
+    }
+
+    protected int makeNumThreads() {
+	int retval = Runtime.getRuntime().availableProcessors();
+	try {
+	    int vis = Integer.parseInt( param( NUM_THREADS_ID ) );
+	    if ( vis > 0 ) { // < 0 should be impossible
+		retval = vis;
+	    }
+	} catch ( NumberFormatException e ) {
+	    // shouldn't be possible
+	    e.printStackTrace();
+	    System.err.println( e );
+	}
+	return retval;
+    }
+
+    public int getNumThreads() {
+	return numThreads;
+    }
+
+    public static void validateNonNegative( String stored,
+					    String message ) throws ParameterException {
+	try {
+	    int num = Integer.parseInt( stored );
+	    if ( num < 0 ) {
+		throw new NumberFormatException();
+	    }
+	} catch ( NumberFormatException e ) {
+	    throw new ParameterException( message );
+	}
+    }
+
+    public static void validateBoolean( String stored,
+					String message ) throws ParameterException {
+	if ( !stored.equals( "true" ) &&
+	     !stored.equals( "false" ) ) {
+	    throw new ParameterException( message );
+	}
+    }
+
+    private void validateShouldShutdown( String stored ) throws ParameterException {
+	validateBoolean( stored,
+			 "Whether or not to shutdown must be either \"true\"" +
+			 " or \"false\"" );
+    }
+
+    private void validateNumThreads( String stored ) throws ParameterException {
+	validateNonNegative( stored,
+			     "The number of threads must be a non-negative integer" );
+    }
+
+    private void validateVisibility( String stored ) throws ParameterException {
+	validateNonNegative( stored,
+			     "The visibility timeout must be a non-negative integer" );
     }
 
     /**
-     * Gets the credentials object.
-     * If one has already been made, it will return that one.
+     * Overridden to validate the visibility timout and the number of threads.
      */
-    public AWSCredentials getCredentials() {
-	return credentials;
-    }
+    protected Map< String, String > makeParams( Map< String, String > input ) 
+	throws ParameterException {
+	Map< String, String > retval = super.makeParams( input );
 
-    /**
-     * Makes an S3 handle for this
-     */
-    protected AmazonS3 makeS3() {
-	return new AmazonS3Client( getCredentials() );
-    }
+	validateNumThreads( retval.get( NUM_THREADS_ID ) );
+	validateVisibility( retval.get( VISIBILITY_TIMEOUT_ID ) );
+	validateShouldShutdown( retval.get( SHOULD_SHUTDOWN_ID ) );
 
-    public AmazonS3 getS3() {
-	return s3;
-    }
-
-    protected AmazonSQS makeSQS() {
-	return new AmazonSQSClient( getCredentials() );
-    }
-    
-    public AmazonSQS getSQS() {
-	return sqs;
+	return retval;
     }
 
     /**
@@ -129,7 +238,7 @@ public class AWSParameters extends CloudParameters {
      * and <code>MAX_NUMBER_MESSAGES</code>
      */
     public ReceiveMessageRequest makeMessageRequest() {
-	return makeMessageRequest( visibility,
+	return makeMessageRequest( getVisibilityTimeout(),
 				   MAX_NUMBER_MESSAGES );
     }
 
@@ -238,8 +347,8 @@ public class AWSParameters extends CloudParameters {
 	throws IOException {
 	String toExecute = 
 	    "cd '" + getEnvironmentPrefix() + "'; " + args;
-	return executeProgram( new String[]{ "sh", "-c",
-					     toExecute } );
+	return JobControl.executeProgram( new String[]{ "sh", "-c",
+							toExecute } );
     }
 
     /**
@@ -256,57 +365,13 @@ public class AWSParameters extends CloudParameters {
 	Download.downloadPrefix( getS3(),
 				 getEnvironmentBucket(),
 				 getEnvironmentZip() );
-	executeProgram( new String[]{ "unzip", 
-				      getEnvironmentZip() } );
-	makeExecutableInDir( getEnvironmentPrefix() );
+	JobControl.executeProgram( new String[]{ "unzip", 
+						 getEnvironmentZip() } );
+	JobControl.makeExecutableInDir( getEnvironmentPrefix() );
     }
 
-    /**
-     * Returns the output of the program in a single string.
-     */
-    public static String executeProgram( String[] args ) 
-	throws IOException {
-	String retval = "";
-	String line;
-	Process process = 
-	    Runtime.getRuntime().exec( args );
-	InputStream inputStream = process.getInputStream();
-	BufferedReader reader =
-	    new BufferedReader( new InputStreamReader( inputStream ) );
-	while ( ( line = reader.readLine() ) != null ) {
-	    retval += line;
-	}
-	reader.close();
-	inputStream.close();
-	process.getOutputStream().close();
-	process.getErrorStream().close();
-	return retval;
+    public static AWSParameters makeParameters() 
+	throws MalformedURLException, ProtocolException, IOException, ParameterException {
+	return new AWSParameters( ParametersBase.readMapFromURL() );
     }
-
-    /**
-     * Makes the file encoded by the given path executable.
-     * Refers to the local disk.
-     */
-    public static void makeExecutable( String fileName ) throws IOException {
-	executeProgram( new String[]{ "chmod",
-				      "a+x",
-				      fileName } );
-    }
-
-    /**
-     * Makes all files in the given directory path executable
-     * Refers to the local disk.
-     */
-    public static void makeExecutableInDir( String dirName ) throws IOException {
-	for( File current : new File( dirName ).listFiles() ) {
-	    makeExecutable( current.getPath() );
-	}
-    }
-
-    public static AWSParameters makeInitialAWSParameters() 
-	throws ParameterException, IOException {
-	AWSParameters retval = new AWSParameters();
-	retval.prepEnvironment();
-	return retval;
-    }
-} // AWSParameters 
+}

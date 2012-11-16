@@ -68,7 +68,7 @@ public class ListQueue {
 	}
 
 	try {
-	    AmazonSQS sqs = new AmazonSQSClient( LocalParameters.makeParameters().makeCredentials() );
+	    AmazonSQS sqs = CredentialParameters.makeParameters().getSQS();
 	    printMessages( getMessages( sqs, 
 					BucketToQueue.makeQueue( sqs, args[ 0 ]  ) ) );
 	} catch ( Exception e ) {

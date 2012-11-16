@@ -1,296 +1,111 @@
-/*
- * Parameters.java
- *
- * Version:
- *     $Id: Parameters.java,v 1.1 2012/11/06 01:12:28 kyle Exp $
- *
- * Revisions:
- *      $Log: Parameters.java,v $
- *      Revision 1.1  2012/11/06 01:12:28  kyle
- *      Initial revision
- *
- *
- */
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.regex.*;
+
 
 /**
- * Abstracts away parameters for ClientWorker.
+ * Base class for parameters.
+ * Provides a default implementation of the makeParams routine.
  * @author Kyle Dewey
  */
-public abstract class Parameters {
+public abstract class ParametersBase implements Parameters {
     // begin constants
-    // delimiter for keys and values
-    public static final char KEY_VALUE_DELIM = '=';
-
     // delimeter for making error messages
     public static final String ERROR_DELIM = ", ";
+    public static final String MAP_DELIM = "=";
+    public static final String DEFAULT_PARAMETERS_FILE = "parameters.txt";
 
-    // the names of needed parameters
-    public static final String INPUT_BUCKET_NAME_ID = "inputBucket";
-    public static final String OUTPUT_BUCKET_NAME_ID = "outputBucket";
-    public static final String QUEUE_URL_ID = "queueURL";
-    public static final String ENVIRONMENT_BUCKET_NAME_ID = "environmentBucket";
-    public static final String ENVIRONMENT_PREFIX_ID = "environmentPrefix";
-    public static final String ENVIRONMENT_ZIP_FILE_ID = "environmentZip";
-    public static final String ANALYSIS_PROGRAM_NAME_ID = "analysisProgram";
-    public static final String ACCESS_KEY_ID = "accessKey";
-    public static final String SECRET_KEY_ID = "secretKey";
-    public static final String KEY_PAIR_ID = "keyPair";
-    public static final Set< String > NEEDED_PARAMS =
-	new HashSet< String >() {
-	{
-	    add( INPUT_BUCKET_NAME_ID );
-	    add( OUTPUT_BUCKET_NAME_ID );
-	    add( QUEUE_URL_ID );
-	    add( ENVIRONMENT_BUCKET_NAME_ID );
-	    add( ENVIRONMENT_PREFIX_ID );
-	    add( ENVIRONMENT_ZIP_FILE_ID );
-	    add( ANALYSIS_PROGRAM_NAME_ID );
-	    add( ACCESS_KEY_ID );
-	    add( SECRET_KEY_ID );
-	    add( KEY_PAIR_ID );
-	}
-    };
-
-    // the names of optional parameters, along with their default values
-    // the number of nodes to run
-    public static final String NUM_NODES_ID = "numNodes";
-    public static final int DEFAULT_NUM_NODES = 1;
-
-    // the image ID to use
-    public static final String IMAGE_ID_ID = "imageID";
-    public static final String DEFAULT_IMAGE_ID = "ami-8253aceb"; // autorun4
-
-    // the security group to use
-    public static final String SECURITY_GROUP_ID = "securityGroup";
-    public static final String DEFAULT_SECURITY_GROUP = "quick-start-1";
-
-    // the shutdown behavior
-    public static final String SHUTDOWN_BEHAVIOR_ID = "shutdownBehavior";
-    public static final String DEFAULT_SHUTDOWN_BEHAVIOR = "terminate";
-
-    // the type of instance to spawn
-    public static final String INSTANCE_TYPE_ID = "instanceType";
-    public static final String DEFAULT_INSTANCE_TYPE = "t1.micro";
-
-    // visibility timeout time, in seconds
-    public static final String VISIBILITY_TIMEOUT_ID = "visibilityTimeout";
-    public static final int DEFAULT_VISIBILITY_TIMEOUT = 60 * 10; // 10 minutes
-
-    // number of threads to use
-    // 0 means use the max available
-    public static final String NUM_THREADS_ID = "numThreads";
-    public static final int DEFAULT_NUM_THREADS = 0;
-
-    public static final Map< String, String > OPTIONAL_PARAMS =
-	new HashMap< String, String >() {
-	{
-	    put( NUM_NODES_ID, 
-		 Integer.toString( DEFAULT_NUM_NODES ) );
-	    put( IMAGE_ID_ID, 
-		 DEFAULT_IMAGE_ID );
-	    put( SECURITY_GROUP_ID, 
-		 DEFAULT_SECURITY_GROUP );
-	    put( SHUTDOWN_BEHAVIOR_ID, 
-		 DEFAULT_SHUTDOWN_BEHAVIOR );
-	    put( INSTANCE_TYPE_ID, 
-		 DEFAULT_INSTANCE_TYPE );
-	    put( VISIBILITY_TIMEOUT_ID,
-		 Integer.toString( DEFAULT_VISIBILITY_TIMEOUT ) ); 
-	    put( NUM_THREADS_ID, 
-		 Integer.toString( DEFAULT_NUM_THREADS ) );
-	}
-    };
+    // where user data is located on the cloud
+    public static final String USER_DATA_LOCATION =
+	"http://169.254.169.254/latest/user-data";
     // end constants
 
     // begin instance variables
-    protected Map< String, String > parameters;
+    protected Map< String, String > params;
     // end instance variables
 
-    /**
-     * Loads in all parameters.
-     * @throws ParameterException If parameters were invalid for whatever reason
-     */
-    public Parameters() throws ParameterException {
-	parameters = getParameters();
-	validateParams();
-	addOptionalParams( parameters );
-    }
-
-    public int paramOrDefault( String key, int defaultValue ) {
-	int retval = defaultValue;
-	try {
-	    retval = Integer.parseInt( getParam( key ) );
-	} catch ( NumberFormatException e ) {
-	} catch ( ParameterException e ) {
-	    e.printStackTrace();
-	    System.err.println( "IMPOSSIBLE PARAMETER EXCEPTION: " + e.toString() );
-	}
-
-	return retval;
-    }
-
-    public int paramOrDefaultPositive( String key,
-				       int defaultValue,
-				       int ifNotPositive ) {
-	int recorded = paramOrDefault( key, defaultValue );
-	if ( recorded <= 0 ) {
-	    recorded = ifNotPositive;
-	}
-	return recorded;
-    }
-
-    public int numThreads() {
-	return paramOrDefaultPositive( NUM_THREADS_ID,
-				       DEFAULT_NUM_THREADS,
-				       Runtime.getRuntime().availableProcessors() );
-    }
-
-    public int visibility() {
-	return paramOrDefaultPositive( VISIBILITY_TIMEOUT_ID,
-				       DEFAULT_VISIBILITY_TIMEOUT,
-				       DEFAULT_VISIBILITY_TIMEOUT );
+    public ParametersBase( Map< String, String > input ) throws ParameterException {
+	params = makeParams( input );
     }
 
     /**
-     * Validates that the given name is that of a parameter
+     * Returns the value of the given key, or null if the key is not recognized.
      */
-    public void validateParamName( String name ) throws ParameterException {
-	if ( !parameters.containsKey( name ) ) {
-	    throw new ParameterException( "Unrecognized parameter name: " + name );
-	}
+    public String param( String key ) {
+	return params.containsKey( key ) ? params.get( key ) : null;
     }
 
     /**
-     * Gets the parameter value by the given name.
-     * @throws ParameterException If the name is unrecognized.
+     * Validates that all the given keys were entered and adds any optional keys
      */
-    public String getParam( String name ) throws ParameterException {
-	validateParamName( name );
-	return parameters.get( name );
-    }
-
-    /**
-     * Gets the param with the given name.
-     * Returns null if the parameter doesn't exist
-     */
-    public String param( String name ) {
-	String retval = null;
-	try {
-	    retval = getParam( name );
-	} catch( ParameterException e ) {}
-	return retval;
-    }
-
-    /**
-     * Parses a key/value pair.
-     * @param data The data to parse
-     * @return The key and the value in a pair as the first and the
-     * second items, respectively.  Returns null if there isn't
-     * a key/value pair on this line
-     */
-    public static Pair< String, String > parseKeyValuePair( String data ) {
-	Pair< String, String > retval = null;
-	int firstDelim = data.indexOf( KEY_VALUE_DELIM );
-
-	if ( firstDelim >= 0 ) {
-	    retval = new Pair< String, String >( data.substring( 0, firstDelim ),
-						 data.substring( firstDelim + 1 ) );
-	}
-	return retval;
-    }
-
-    /**
-     * Parses in the given input data.
-     * It is expected that there is one key/value pair per line,
-     * in the format key=value
-     * @param lines All the lines in the given file
-     * @return All the key value pairs.
-     */
-    public static Map< String, String > parseInitLines( String[] lines ) {
-	Map< String, String > retval = new HashMap< String, String >();
-	for( String line : lines ) {
-	    Pair< String, String > pair = parseKeyValuePair( line );
-	    if ( pair != null ) {
-		retval.put( pair.first,
-			    pair.second );
-	    }
-	}
-	return retval;
-    }
-
-    /**
-     * Gets raw parameter input from an input source of some kind
-     * @return an array of strings, one per line
-     * @throws IOException If an error occurred on reading in the parameters
-     */
-    public abstract String[] readRawParameters() throws IOException;
-
-    /**
-     * Gets the parameters for this instance.
-     * @throws ParameterException If a needed parameter is missing
-     */
-    public Map< String, String > getParameters() 
+    protected Map< String, String > makeParams( Map< String, String > input ) 
 	throws ParameterException {
-	try {
-	    return parseInitLines( readRawParameters() );
-	} catch ( MalformedURLException e ) {
-	    throw new ParameterException( e.getMessage() );
-	} catch ( ProtocolException e ) {
-	    throw new ParameterException( e.getMessage() );
-	} catch ( IOException e ) {
-	    throw new ParameterException( e.getMessage() );
+	validateInput( input );
+	return fillMissing( input );
+    }
+
+    /**
+     * Makes sure that the given input has all the needed keys.
+     * Any extra keys are ignored.
+     */
+    public void validateInput( Map< String, String > input )
+	throws ParameterException {
+	Set< String > missing = setDiff( getNeededParams(),
+					 input.keySet() );
+	if ( missing.size() > 0 ) {
+	    List< String > missingSorted = new ArrayList< String >( missing );
+	    Collections.sort( missingSorted );
+	    throw new ParameterException( "Missing needed parameters: " +
+					  join( missingSorted ) );
 	}
     }
 
     /**
-     * Makes a parameter line
-     * @param key The key of the parameter
-     * @param value The value of the parameter
-     * @return key + KEY_VALUE_DELIM + value
+     * Given a parameters object, it fills in
+     * any missing keys, returning a Map with all the needed parameters
+     * accounted for.
      */
-    public static String paramLine( String key,
-				    String value ) {
-	return key + KEY_VALUE_DELIM + value;
-    }
-
-    /**
-     * Makes a parameter line with the given param
-     */
-    public String paramLine( String key ) throws ParameterException {
-	return paramLine( key,
-			  getParam( key ) );
-    }
-
-    /**
-     * Gets all the keys which are not recognized in the given map.
-     */
-    public static List< String > unknownKeys( Map< String, String > params ) {
-	List< String > retval = new ArrayList< String >();
-	for( String key : params.keySet() ) {
-	    if ( !NEEDED_PARAMS.contains( key ) &&
-		 !OPTIONAL_PARAMS.containsKey( key ) ) {
-		retval.add( key );
-	    }
+    public Map< String, String > fillMissing( Map< String, String > input ) {
+	Map< String, String > retval = new HashMap< String, String >( input );
+	Map< String, String > optional = getOptionalParams();
+	for ( String missing : setDiff( optional.keySet(), input.keySet() ) ) {
+	    retval.put( missing, optional.get( missing ) );
 	}
-	Collections.sort( retval );
+	return retval;
+    }
+
+    public Set< String > knownKeys() {
+	return setUnion( getNeededParams(),
+			 getOptionalParams().keySet() );
+    }
+
+    /**
+     * Removes any keys we don't know about in the given params object.
+     */
+    public Map< String, String > stripUnknownKeys( Map< String, String > input ) {
+	Map< String, String > retval = 
+	    new HashMap< String, String >( input );
+	for( String extra : setDiff( input.keySet(), knownKeys() ) ) {
+	    retval.remove( extra );
+	}
 	return retval;
     }
 
     /**
-     * gets the required keys that are missing in the given map.
+     * Gets the difference of two sets, non-destructively.
      */
-    public static List< String > missingNeededKeys( Map< String, String > params ) {
-	List< String > retval = new ArrayList< String >();
-	for( String key : NEEDED_PARAMS ) {
-	    if ( !params.containsKey( key ) ) {
-		retval.add( key );
-	    }
-	}
-	Collections.sort( retval );
+    public static < T > Set< T > setDiff( Set< T > first,
+					  Set< T > second ) {
+	Set< T > retval = new HashSet< T >( first );
+	retval.removeAll( second );
+	return retval;
+    }
+
+    public static < T > Set< T > setUnion( Set< T > first,
+					   Set< T > second ) {
+	Set< T > retval = new HashSet< T >( first );
+	retval.addAll( second );
 	return retval;
     }
 
@@ -306,49 +121,92 @@ public abstract class Parameters {
 	return join( items, ERROR_DELIM );
     }
 
-    /**
-     * Like <code>validateParams</code>, but it uses the state
-     */
-    public void validateParams() throws ParameterException {
-	validateParams( parameters );
-    }
-
-    /**
-     * Validates the given parameters.
-     * This checks that all keys are recognized, and that we
-     * have all neccessary parameters.
-     * @param params The parameters to check
-     * @throws ParameterException If we don't recognize all keys, or if
-     * we are missing a needed parameter
-     */
-    public static void validateParams( Map< String, String > params )
-	throws ParameterException {
-	List< String > unknown = unknownKeys( params );
-	if ( unknown.size() > 0 ) {
-	    throw new ParameterException( "Unrecognized parameters: " +
-					  join( unknown ) );
-	}
-	List< String > missing = missingNeededKeys( params );
-	if ( missing.size() > 0 ) {
-	    throw new ParameterException( "Missing needed parameters: " +
-					  join( missing ) );
-	}
-    }
-
-    /**
-     * Adds optional parameters to the given map.
-     * That is, for each optional parameter not already in the map,
-     * it will add the optional parameter along with its default value.
-     * Note that this is destructive
-     * @pre The parameters are valid, as determined by <code>validateParams()</code>
-     */
-    public static void addOptionalParams( Map< String, String > params ) {
-	for( String key : OPTIONAL_PARAMS.keySet() ) {
-	    if ( !params.containsKey( key ) ) {
-		params.put( key, 
-			    OPTIONAL_PARAMS.get( key ) );
+    public static boolean allWhitespace( String string ) {
+	for( int x = 0; x < string.length(); x++ ) {
+	    if ( !Character.isWhitespace( string.charAt( x ) ) ) {
+		return false;
 	    }
 	}
+	return true;
     }
-} // Parameters
 
+    /**
+     * @return a new key/pair mapping, or null if the line was blank.
+     * @throws ParameterException If the line is malformed
+     */
+    public static Pair< String, String > parseLine( String line )
+	throws ParameterException {
+	String[] split = line.split( MAP_DELIM );
+	if ( split.length == 1 ) {
+	    if ( !allWhitespace( split[ 0 ] ) ) {
+		throw new ParameterException( "Non-blank line missing value" );
+	    }
+	    return null;
+	} else if ( split.length == 2 ) {
+	    return new Pair< String, String >( split[ 0 ], split[ 1 ] );
+	} else {
+	    throw new ParameterException( "Extra key/pair mappings on the same line" );
+	}
+    }
+
+    public static Map< String, String > readMapFromFile() 
+	throws IOException, ParameterException {
+	return readMapFromFile( DEFAULT_PARAMETERS_FILE );
+    }
+
+    public static Map< String, String > readMapFromFile( String filename ) 
+	throws IOException, ParameterException {
+	BufferedReader reader =
+	    new BufferedReader( new FileReader( filename ) );
+	try {
+	    return readMapFromBufferedReader( 
+		     new BufferedReader( new FileReader( filename ) ) );
+	} finally {
+	    reader.close();
+	}
+    }
+
+    public static HttpURLConnection connectionFromURL( String url )
+	throws MalformedURLException, ProtocolException, IOException {
+	List< String > retval = new LinkedList< String >();
+	HttpURLConnection connection = 
+	    (HttpURLConnection)( new URL( url ).openConnection() );
+	connection.setRequestMethod( "GET" );
+	connection.setDoOutput( true );
+	connection.connect();
+	return connection;
+    }
+
+    public static Map< String, String > readMapFromURL( String url )
+	throws MalformedURLException, ProtocolException, IOException, ParameterException {
+	HttpURLConnection connection = connectionFromURL( url );
+	try {
+	    BufferedReader reader =
+		new BufferedReader( new InputStreamReader( connection.getInputStream() ) );
+	    return readMapFromBufferedReader( reader );
+	} finally {
+	    connection.disconnect();
+	}
+    }
+
+    public static Map< String, String > readMapFromURL()
+	throws MalformedURLException, ProtocolException, IOException, ParameterException {
+	return readMapFromURL( USER_DATA_LOCATION );
+    }
+
+    public static Map< String, String > readMapFromBufferedReader( BufferedReader reader )
+	throws IOException, ParameterException {
+	String line;
+	Map< String, String > retval = new HashMap< String, String >();
+	while( ( line = reader.readLine() ) != null ) {
+	    Pair< String, String > pair = parseLine( line );
+	    if ( pair != null ) {
+		retval.put( pair.first, pair.second );
+	    }
+	}
+	return retval;
+    }
+
+    public abstract Set< String > getNeededParams();
+    public abstract Map< String, String > getOptionalParams();
+}

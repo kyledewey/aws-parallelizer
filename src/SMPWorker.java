@@ -9,7 +9,7 @@ public class SMPWorker extends Worker {
 
     public SMPWorker( AWSParameters parameters ) throws IOException {
 	this( parameters,
-	      parameters.numThreads() );
+	      parameters.getNumThreads() );
     }
 
     public SMPWorker( AWSParameters parameters,
@@ -20,10 +20,11 @@ public class SMPWorker extends Worker {
     }
 
     protected Runnable makeWorker() {
+	final Worker parent = this;
 	return new Runnable() {
 	    public void run() {
 		try {
-		    new SequentialWorker( parameters ).processFiles();
+		    new SequentialWorker( parent.getParameters() ).processFiles();
 		} catch ( IOException e ) {
 		    e.printStackTrace();
 		    System.err.println( e.toString() );

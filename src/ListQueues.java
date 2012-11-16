@@ -6,7 +6,7 @@ import com.amazonaws.services.sqs.model.*;
 public class ListQueues {
     public static void main( String[] args ) {
 	try {
-	    AmazonSQS sqs = new AmazonSQSClient( LocalParameters.makeParameters().makeCredentials() );
+	    AmazonSQS sqs = CredentialParameters.makeParameters().getSQS();
 	    for( String url : sqs.listQueues().getQueueUrls() ) {
 		System.out.println( url );
 	    }

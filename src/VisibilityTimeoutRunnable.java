@@ -8,28 +8,25 @@ public class VisibilityTimeoutRunnable {
     // end constants
 
     // begin instance variables
-    private Worker worker;
+    private final Worker worker;
+    private final AWSParameters parameters;
+    private final Message message;
+    private final Thread timer;
     private boolean done;
-    private Message message;
-    private Thread timer;
     // end instance variables
 
-    public void updateVisibilityTimeout() {
-	worker.parameters.sqs.changeMessageVisibility( new ChangeMessageVisibilityRequest( worker.parameters.param( Parameters.QUEUE_URL_ID ), 
-											   message.getReceiptHandle(),
-											   worker.parameters.visibility ) );
-    }
-
-    public VisibilityTimeoutRunnable( final Worker worker, Message message ) {
+    public VisibilityTimeoutRunnable( Worker worker, Message message ) {
 	this.worker = worker;
 	this.message = message;
+	parameters = worker.getParameters();
 	timer = 
 	    new Thread( new Runnable() {
 		    public void run() {
+			int baseTimeout = parameters.getVisibilityTimeout();
 			boolean shouldRun = true;
 			while( shouldRun && !Thread.currentThread().interrupted() ) {
 			    try {
-				Thread.sleep( worker.parameters.visibility * 1000 - MILLISECONDS_IN_MINUTE );
+				Thread.sleep( baseTimeout * 1000 - MILLISECONDS_IN_MINUTE );
 				updateVisibilityTimeout();
 			    } catch ( InterruptedException e ) {
 				shouldRun = false;
@@ -38,7 +35,14 @@ public class VisibilityTimeoutRunnable {
 		    }
 		} );
     }
-    
+
+    public void updateVisibilityTimeout() {
+	parameters.getSQS().changeMessageVisibility( 
+	  new ChangeMessageVisibilityRequest( parameters.param( AWSParameters.QUEUE_URL_ID ), 
+					      message.getReceiptHandle(),
+					      parameters.getVisibilityTimeout() ) );
+    }
+
     public void run() {
 	boolean errorOccurred = false;
 	timer.start();

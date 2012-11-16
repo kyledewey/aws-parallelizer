@@ -37,7 +37,7 @@ public class MakeBucket {
 	    System.exit( 1 );
 	}
 	try {
-	    AmazonS3 s3 = new AmazonS3Client( LocalParameters.makeParameters().makeCredentials() );
+	    AmazonS3 s3 = CredentialParameters.makeParameters().getS3();
 	    s3.createBucket( args[ 0 ] );
 	    for( File current : makeFilesFromArgs( args ) ) {
 		s3.putObject( args[ 0 ], 

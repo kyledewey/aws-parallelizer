@@ -13,7 +13,7 @@ public class DeleteQueue {
 	}
 	
 	try {
-	    AmazonSQS sqs = new AmazonSQSClient( LocalParameters.makeParameters().makeCredentials() );
+	    AmazonSQS sqs = CredentialParameters.makeParameters().getSQS();
 	    sqs.deleteQueue( new DeleteQueueRequest( BucketToQueue.makeQueue( sqs, args[ 0 ]  ) ) );
 	} catch ( Exception e ) {
 	    e.printStackTrace();

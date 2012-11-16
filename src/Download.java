@@ -42,7 +42,7 @@ public class Download {
 	    System.exit( 1 );
 	}
 	try {
-	    AmazonS3 s3 = new AmazonS3Client( LocalParameters.makeParameters().makeCredentials() );
+	    AmazonS3 s3 = CredentialParameters.makeParameters().getS3();
 	    downloadPrefix( s3,
 			    args[ 0 ],
 			    args[ 1 ] );

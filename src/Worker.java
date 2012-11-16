@@ -5,7 +5,7 @@ import com.amazonaws.services.sqs.model.*;
 
 public abstract class Worker {
     // begin instance variables
-    public final AWSParameters parameters;
+    private final AWSParameters parameters;
     // end instance variables
 
     public Worker( AWSParameters parameters ) {
@@ -52,6 +52,10 @@ public abstract class Worker {
 	    }
 	}
 	inputFile.delete();
+    }
+
+    public AWSParameters getParameters() {
+	return parameters;
     }
 
     public abstract void processFiles();
