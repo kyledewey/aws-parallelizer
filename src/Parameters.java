@@ -15,10 +15,6 @@ public abstract class Parameters {
     public static final String ERROR_DELIM = ", ";
     public static final String MAP_DELIM = "=";
     public static final String DEFAULT_PARAMETERS_FILE = "parameters.txt";
-
-    // where user data is located on the cloud
-    public static final String USER_DATA_LOCATION =
-	"http://169.254.169.254/latest/user-data";
     // end constants
 
     // begin instance variables
@@ -160,34 +156,6 @@ public abstract class Parameters {
 	} finally {
 	    reader.close();
 	}
-    }
-
-    public static HttpURLConnection connectionFromURL( String url )
-	throws MalformedURLException, ProtocolException, IOException {
-	List< String > retval = new LinkedList< String >();
-	HttpURLConnection connection = 
-	    (HttpURLConnection)( new URL( url ).openConnection() );
-	connection.setRequestMethod( "GET" );
-	connection.setDoOutput( true );
-	connection.connect();
-	return connection;
-    }
-
-    public static Map< String, String > readMapFromURL( String url )
-	throws MalformedURLException, ProtocolException, IOException, ParameterException {
-	HttpURLConnection connection = connectionFromURL( url );
-	try {
-	    BufferedReader reader =
-		new BufferedReader( new InputStreamReader( connection.getInputStream() ) );
-	    return readMapFromBufferedReader( reader );
-	} finally {
-	    connection.disconnect();
-	}
-    }
-
-    public static Map< String, String > readMapFromURL()
-	throws MalformedURLException, ProtocolException, IOException, ParameterException {
-	return readMapFromURL( USER_DATA_LOCATION );
     }
 
     public static Map< String, String > readMapFromBufferedReader( BufferedReader reader )

@@ -113,9 +113,61 @@ public class CredentialParameters extends Parameters {
 	return listQueuesByUrl().contains( url );
     }
 
+    protected List< Filter > persistentSpotRequestFilters() 
+	throws IOException {
+	return Arrays.asList( new Filter( "instance-id",
+					  Arrays.asList( InstanceHelpers.getInstanceId() ) ),
+			      new Filter( "type",
+					  Arrays.asList( "persistent" ) ) );
+    }
+
+    protected DescribeSpotInstanceRequestsRequest makeSpotRequestRequest() 
+	throws IOException {
+	return new DescribeSpotInstanceRequestsRequest().withFilters( 
+		     persistentSpotRequestFilters() );
+    }
+
+    /**
+     * Determines whether or not we are running on
+     * a persistent spot request
+     */
+    public boolean isPersistentSpotRequest() throws IOException {
+	return !getEC2()
+	    .describeSpotInstanceRequests( makeSpotRequestRequest() )
+	    .getSpotInstanceRequests()
+	    .isEmpty();
+    }
+
+    /**
+     * Cancels the spot request with the given instance id
+     */
+    public CancelSpotInstanceRequestsResult cancelSpotRequest( String instanceId ) 
+	throws IOException {
+	return getEC2()
+	    .cancelSpotInstanceRequests( 
+	       new CancelSpotInstanceRequestsRequest( Arrays.asList( instanceId ) ) );
+    }
+
+    /**
+     * Cancels the spot request backing this instance, but only if this
+     * instance is a persistent spot request.
+     * Returns null if it's not.
+     */
+    public CancelSpotInstanceRequestsResult cancelMeIfPersistentSpot() 
+	throws IOException {
+	return isPersistentSpotRequest() ? 
+	    cancelSpotRequest( InstanceHelpers.getInstanceId() ) :
+	    null;
+    }
+
     public static CredentialParameters makeParameters()
 	throws IOException, ParameterException {
 	return new CredentialParameters( Parameters.readMapFromFile() );
+    }
+
+    public static CredentialParameters makeParametersOnAWS()
+	throws IOException, ParameterException {
+	return new CredentialParameters( InstanceHelpers.readMapFromURL() );
     }
 }
 	    

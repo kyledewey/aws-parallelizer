@@ -19,7 +19,7 @@ public class Client {
     // end instance variables
 
     public Client() 
-	throws MalformedURLException, ProtocolException, IOException, ParameterException {
+	throws IOException, ParameterException {
 	parameters = AWSParameters.makeParameters();
 	makeShutdownSentinel();
 	parameters.prepEnvironment();
