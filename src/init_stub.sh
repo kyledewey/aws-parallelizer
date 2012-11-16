@@ -8,6 +8,7 @@ java Client
 
 if [ -f $SHOULD_SHUTDOWN_SENTINEL ]
 then
+    java CancelPersistent
     shutdown -h now
 fi
 

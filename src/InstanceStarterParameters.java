@@ -22,7 +22,10 @@ public class InstanceStarterParameters extends AWSParameters {
     // optional params
     public static final String SHUTDOWN_BEHAVIOR_ID = "shutdownBehavior";
     public static final String DEFAULT_SHUTDOWN_BEHAVIOR = "terminate";
-    
+
+    public static final String SPOT_TYPE_ID = "spotType";
+    public static final String DEFAULT_SPOT_TYPE = "one-time";
+
     private static final Set< String > NEEDED_PARAMS =
 	new HashSet< String >() {
 	{
@@ -38,6 +41,8 @@ public class InstanceStarterParameters extends AWSParameters {
 	{
 	    put( SHUTDOWN_BEHAVIOR_ID,
 		 DEFAULT_SHUTDOWN_BEHAVIOR );
+	    put( SPOT_TYPE_ID,
+		 DEFAULT_SPOT_TYPE );
 	}
     };
     // end constants
@@ -85,6 +90,18 @@ public class InstanceStarterParameters extends AWSParameters {
 
     public String getShutdownBehavior() {
 	return param( SHUTDOWN_BEHAVIOR_ID );
+    }
+
+    public String getSpotType() {
+	return param( SPOT_TYPE_ID );
+    }
+
+    public static void validateSpotType( String spotType )
+	throws ParameterException {
+	validateInSet( spotType,
+		       new String[]{ "one-time", "persistent" },
+		       "The spot type must either be \"one-time\"" +
+		       " or \"persistent\"" );
     }
 
     public static void validateShutdownBehavior( String stored )
@@ -150,13 +167,15 @@ public class InstanceStarterParameters extends AWSParameters {
     }
 	     
     /**
-     * Overridden to validate the shutdown behavior and the instance type
+     * Overridden to validate the shutdown behavior, the instance type,
+     * and the spot type.
      */
     protected Map< String, String > makeParams( Map< String, String > input )
 	throws ParameterException {
 	Map< String, String > retval = super.makeParams( input );
 	validateShutdownBehavior( retval.get( SHUTDOWN_BEHAVIOR_ID ) );
 	validateInstanceType( retval.get( INSTANCE_TYPE_ID ) );
+	validateSpotType( retval.get( SPOT_TYPE_ID ) );
 	return retval;
     }
 
@@ -221,7 +240,8 @@ public class InstanceStarterParameters extends AWSParameters {
 	return new RequestSpotInstancesRequest()
 	    .withInstanceCount( new Integer( numInstances ) )
 	    .withLaunchSpecification( makeLaunchSpecification() )
-	    .withSpotPrice( price );
+	    .withSpotPrice( price )
+	    .withType( getSpotType() );
     }
 
     public RequestSpotInstancesResult requestInstances( int numInstances, 
