@@ -90,13 +90,14 @@ public class AWSParameters extends CredentialParameters {
     }
 
     public Map< String, String > getOptionalParams() {
-	Map< String, String > retval = super.getOptionalParams();
+	Map< String, String > retval = 
+	    new HashMap< String, String >( super.getOptionalParams() );
 	retval.putAll( OPTIONAL_PARAMS );
 	return retval;
     }
 
     public Set< String > getNeededParams() {
-	Set< String > retval = super.getNeededParams();
+	Set< String > retval = new HashSet< String >( super.getNeededParams() );
 	retval.addAll( NEEDED_PARAMS );
 	return retval;
     }
@@ -184,26 +185,41 @@ public class AWSParameters extends CredentialParameters {
 	}
     }
 
-    public static void validateBoolean( String stored,
-					String message ) throws ParameterException {
-	if ( !stored.equals( "true" ) &&
-	     !stored.equals( "false" ) ) {
+    public static void validateInSet( String stored,
+				      String[] valid,
+				      String message ) throws ParameterException {
+	validateInSet( stored, 
+		       new HashSet< String >( Arrays.asList( valid ) ),
+		       message );
+    }
+
+    public static void validateInSet( String stored,
+				      Set< String > valid,
+				      String message ) throws ParameterException {
+	if ( !valid.contains( stored ) ) {
 	    throw new ParameterException( message );
 	}
     }
 
-    private void validateShouldShutdown( String stored ) throws ParameterException {
+    public static void validateBoolean( String stored,
+					String message ) throws ParameterException {
+	validateInSet( stored,
+		       new String[]{ "true", "false" },
+		       message );
+    }
+
+    public static void validateShouldShutdown( String stored ) throws ParameterException {
 	validateBoolean( stored,
 			 "Whether or not to shutdown must be either \"true\"" +
 			 " or \"false\"" );
     }
 
-    private void validateNumThreads( String stored ) throws ParameterException {
+    public static void validateNumThreads( String stored ) throws ParameterException {
 	validateNonNegative( stored,
 			     "The number of threads must be a non-negative integer" );
     }
 
-    private void validateVisibility( String stored ) throws ParameterException {
+    public static void validateVisibility( String stored ) throws ParameterException {
 	validateNonNegative( stored,
 			     "The visibility timeout must be a non-negative integer" );
     }
@@ -373,5 +389,10 @@ public class AWSParameters extends CredentialParameters {
     public static AWSParameters makeParameters() 
 	throws MalformedURLException, ProtocolException, IOException, ParameterException {
 	return new AWSParameters( Parameters.readMapFromURL() );
+    }
+
+    public static AWSParameters makeLocalParameters()
+	throws IOException, ParameterException {
+	return new AWSParameters( Parameters.readMapFromFile() );
     }
 }

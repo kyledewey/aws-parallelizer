@@ -14,26 +14,48 @@ import java.io.*;
  * @author Kyle Dewey
  */
 public class BucketToQueue {
+    // begin constants
+    public static final int SECONDS_PER_MINUTE = 60;
+    public static final int MINUTES_PER_HOUR = 60;
+    public static final int HOURS_PER_DAY = 24;
+    public static final int MAX_NUM_DAYS_SQS_ALLOWS = 14;
+    public static final int MAX_RETENTION_PERIOD =
+	SECONDS_PER_MINUTE * MINUTES_PER_HOUR * HOURS_PER_DAY * MAX_NUM_DAYS_SQS_ALLOWS;
+    // end constants
+
+    // begin instance variables
+    private final AWSParameters params;
+    // end instance variables
+
+    public BucketToQueue( AWSParameters params ) {
+	this.params = params;
+    }
+
+    public CreateQueueRequest makeQueueRequest( String queueName ) {
+	Map< String, String > attrib = new HashMap< String, String >();
+	attrib.put( QueueAttributeName.VisibilityTimeout.name(),
+		    Integer.toString( params.getVisibilityTimeout() ) );
+	attrib.put( QueueAttributeName.MessageRetentionPeriod.name(),
+		    Integer.toString( MAX_RETENTION_PERIOD ) );
+	return new CreateQueueRequest( queueName ).withAttributes( attrib );
+    }
+
     /**
      * Creates a queue with the given object.
      * If the queue already exists, it gets the URL of the existing queue.
      */
-    public static String makeQueue( AmazonSQS sqs, 
-				    String queueName ) throws IOException {
-	return sqs.createQueue( new CreateQueueRequest( queueName ) )
-	    .getQueueUrl();
+    public String makeQueue( String queueName ) throws IOException {
+	return params.getSQS().createQueue( makeQueueRequest( queueName ) ).getQueueUrl();
     }
 
     /**
      * @return the URL of the created queue
      */
-    public static String bucketToQueue( AmazonS3 s3,
-					AmazonSQS sqs,
-					String bucketName,
-					String queueName ) throws IOException {
-	String queueURL = makeQueue( sqs, queueName );
-	for( String fileName : ListBucket.listBucket( s3, bucketName ) ) {
-	    sqs.sendMessage( new SendMessageRequest( queueURL, fileName ) );
+    public String bucketToQueue( String bucketName,
+				 String queueName ) throws IOException {
+	String queueURL = makeQueue( queueName );
+	for( String fileName : ListBucket.listBucket( params.getS3(), bucketName ) ) {
+	    params.getSQS().sendMessage( new SendMessageRequest( queueURL, fileName ) );
 	}
 	return queueURL;
     }
@@ -45,11 +67,9 @@ public class BucketToQueue {
 	}
 
 	try {
-	    CredentialParameters params = CredentialParameters.makeParameters();
-	    System.out.println( "Queue URL: " + bucketToQueue( params.getS3(),
-							       params.getSQS(),
-							       args[ 0 ],
-							       args[ 1 ] ) );
+	    BucketToQueue btq = new BucketToQueue( AWSParameters.makeLocalParameters() );
+	    System.out.println( "Queue URL: " + 
+				btq.bucketToQueue( args[ 0 ], args[ 1 ] ) );
 	} catch ( Exception e ) {
 	    e.printStackTrace();
 	    System.err.println( e );

@@ -57,7 +57,7 @@ public abstract class Parameters {
 	    List< String > missingSorted = new ArrayList< String >( missing );
 	    Collections.sort( missingSorted );
 	    throw new ParameterException( "Missing needed parameters: " +
-					  join( missingSorted ) );
+					  join( missingSorted, ERROR_DELIM ) );
 	}
     }
 
@@ -115,10 +115,6 @@ public abstract class Parameters {
 	    retval += item + delim;
 	}
 	return retval.substring( 0, retval.length() - delim.length() );
-    }
-
-    public static String join( List< String > items ) {
-	return join( items, ERROR_DELIM );
     }
 
     public static boolean allWhitespace( String string ) {
@@ -205,6 +201,44 @@ public abstract class Parameters {
 	    }
 	}
 	return retval;
+    }
+
+    public static String paramLine( Map.Entry< String, String > entry ) {
+	return entry.getKey() + MAP_DELIM + entry.getValue();
+    }
+
+    /**
+     * Gets a copy of all parameters.
+     */
+    public Map< String, String > getAllParameters() {
+	return new HashMap< String, String >( params );
+    }
+
+    /**
+     * @param beMinimal true if you want it to only show params specific to
+     * this kind of parameter, else false.
+     */
+    public List< String > asLines( boolean beMinimal ) {
+	Set< String > known = null;
+	if ( beMinimal ) {
+	    known = knownKeys();
+	}
+	List< String > retval = new ArrayList< String >();
+	for ( Map.Entry< String, String > entry : params.entrySet() ) {
+	    if ( ( beMinimal && known.contains( entry.getKey() ) ) ||
+		 !beMinimal ) {
+		retval.add( paramLine( entry ) );
+	    }
+	}
+	return retval;
+    }
+
+    public String toMinimalString() {
+	return join( asLines( true ), "\n" );
+    }
+
+    public String toString() {
+	return join( asLines( false ), "\n" );
     }
 
     public abstract Set< String > getNeededParams();

@@ -4,6 +4,8 @@ import com.amazonaws.services.s3.*;
 import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.sqs.*;
 import com.amazonaws.services.sqs.model.*;
+import com.amazonaws.services.ec2.*;
+import com.amazonaws.services.ec2.model.*;
 
 import java.io.*;
 import java.util.*;
@@ -22,6 +24,7 @@ public class CredentialParameters extends Parameters {
     private final AWSCredentials credentials;
     private final AmazonS3 s3;
     private final AmazonSQS sqs;
+    private final AmazonEC2 ec2;
     // end instance variables
 
     public CredentialParameters( Map< String, String > input ) throws ParameterException {
@@ -29,6 +32,7 @@ public class CredentialParameters extends Parameters {
 	credentials = makeCredentials();
 	s3 = makeS3();
 	sqs = makeSQS();
+	ec2 = makeEC2();
     }
 
     private static final Set< String > NEEDED_PARAMS =
@@ -54,6 +58,14 @@ public class CredentialParameters extends Parameters {
 
     public AWSCredentials getCredentials() {
 	return credentials;
+    }
+
+    private AmazonEC2 makeEC2() {
+	return new AmazonEC2Client( getCredentials() );
+    }
+
+    public AmazonEC2 getEC2() {
+	return ec2;
     }
 
     private AmazonS3 makeS3() {
