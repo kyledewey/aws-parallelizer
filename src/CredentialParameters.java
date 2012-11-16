@@ -16,8 +16,32 @@ import java.util.*;
  */
 public class CredentialParameters extends Parameters {
     // begin constants
+    // needed parameters
     public static final String ACCESS_KEY_ID = "accessKey";
     public static final String SECRET_KEY_ID = "secretKey";
+
+    // optional parameters
+    // the region to use for both EC2 and SQS
+    public static final String EC2_SQS_REGION_ID = "EC2SQSRegion";
+    public static final String DEFAULT_EC2_SQS_REGION = "us-east-1";
+    public static final String REGION_PREFIX = ".";
+    public static final String REGION_SUFFIX = ".amazonaws.com";
+
+    private static final Map< String, String > OPTIONAL_PARAMS =
+	new HashMap< String, String >() {
+	{
+	    put( EC2_SQS_REGION_ID,
+		 DEFAULT_EC2_SQS_REGION );
+	}
+    };
+
+    private static final Set< String > NEEDED_PARAMS =
+	new HashSet< String >() {
+	{
+ 	    add( ACCESS_KEY_ID );
+	    add( SECRET_KEY_ID );
+	}
+    };
     // end constants
 
     // begin instance variables
@@ -35,20 +59,12 @@ public class CredentialParameters extends Parameters {
 	ec2 = makeEC2();
     }
 
-    private static final Set< String > NEEDED_PARAMS =
-	new HashSet< String >() {
-	{
- 	    add( ACCESS_KEY_ID );
-	    add( SECRET_KEY_ID );
-	}
-    };
-
     public Set< String > getNeededParams() {
 	return NEEDED_PARAMS;
     }
 
     public Map< String, String > getOptionalParams() {
-	return new HashMap< String, String >();
+	return OPTIONAL_PARAMS;
     }
 
     private AWSCredentials makeCredentials() {
@@ -60,8 +76,18 @@ public class CredentialParameters extends Parameters {
 	return credentials;
     }
 
+    public String getSQSRegion() {
+	return toSQSFullRegion( param( EC2_SQS_REGION_ID ) );
+    }
+
+    public String getEC2Region() {
+	return toEC2FullRegion( param( EC2_SQS_REGION_ID ) );
+    }
+
     private AmazonEC2 makeEC2() {
-	return new AmazonEC2Client( getCredentials() );
+	AmazonEC2Client retval = new AmazonEC2Client( getCredentials() );
+	retval.setEndpoint( getEC2Region() );
+	return retval;
     }
 
     public AmazonEC2 getEC2() {
@@ -77,7 +103,9 @@ public class CredentialParameters extends Parameters {
     }
 
     private AmazonSQS makeSQS() {
-	return new AmazonSQSClient( getCredentials() );
+	AmazonSQSClient retval =  new AmazonSQSClient( getCredentials() );
+	retval.setEndpoint( getSQSRegion() );
+	return retval;
     }
     
     public AmazonSQS getSQS() {
@@ -169,6 +197,23 @@ public class CredentialParameters extends Parameters {
 	throws IOException {
 	String id = getSpotInstanceRequestId();
 	return ( id != null ) ? cancelSpotRequest( id ) : null;
+    }
+
+    public static String toSQSFullRegion( String shortRegion ) {
+	return toFullRegion( "sqs", shortRegion );
+    }
+
+    public static String toEC2FullRegion( String shortRegion ) {
+	return toFullRegion( "ec2", shortRegion );
+    }
+
+    /**
+     * Given a short region like "us-east-1", it will return a full
+     * region like "sqs.us-east-1.amazonaws.com".
+     */
+    public static String toFullRegion( String serviceName,
+				       String shortRegion ) {
+	return serviceName + REGION_PREFIX + shortRegion + REGION_SUFFIX;
     }
 
     public static CredentialParameters makeParameters()
