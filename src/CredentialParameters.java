@@ -84,6 +84,35 @@ public class CredentialParameters extends Parameters {
 	return sqs;
     }
 
+    public boolean doesBucketExist( String bucket ) {
+	return getS3().doesBucketExist( bucket );
+    }
+
+    public boolean doesObjectExistInBucket( String objectName, String bucket ) {
+	try {
+	    getS3().getObjectMetadata( bucket, objectName );
+	    return true;
+	} catch ( AmazonS3Exception e ) {
+	    if ( e.getStatusCode() == 404 ) {
+		return false;
+	    } else {
+		throw e;
+	    }
+	}
+    }
+
+    public List< String > listQueuesByUrl() {
+	return getSQS().listQueues().getQueueUrls();
+    }
+
+    /**
+     * @param url The queue URL
+     */
+    public boolean doesQueueExist( String url ) {
+	// TODO: there must be a more efficient way to do this
+	return listQueuesByUrl().contains( url );
+    }
+
     public static CredentialParameters makeParameters()
 	throws IOException, ParameterException {
 	return new CredentialParameters( Parameters.readMapFromFile() );

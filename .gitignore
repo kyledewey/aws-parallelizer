@@ -1,4 +1,4 @@
-parameters.txt
+parameters*.txt
 *.class
 aws-java-sdk*
 *~

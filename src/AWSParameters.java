@@ -73,6 +73,10 @@ public class AWSParameters extends CredentialParameters {
     public static final int NUM_RETRIES = 7;
     public static final int START_SECONDS_TO_RETRY = 1;
     public static final String NO_SUCH_KEY = "NoSuchKey";
+
+    // for interfacing with SQS
+    public static final String APPROXIMATE_NUM_MESSAGES = 
+	"ApproximateNumberOfMessages";
     // end constants for processing
     // end constants
 
@@ -110,7 +114,7 @@ public class AWSParameters extends CredentialParameters {
 	return param( OUTPUT_BUCKET_NAME_ID );
     }
 
-    public String getQueueURL() {
+    public String getQueueUrl() {
 	return param( QUEUE_URL_ID );
     }
 
@@ -244,7 +248,7 @@ public class AWSParameters extends CredentialParameters {
      */
     public ReceiveMessageRequest makeMessageRequest( int visibility,
 						     int maxNumber ) {
-	return new ReceiveMessageRequest( getQueueURL() )
+	return new ReceiveMessageRequest( getQueueUrl() )
 	    .withVisibilityTimeout( new Integer( visibility ) )
 	    .withMaxNumberOfMessages( new Integer( maxNumber ) );
     }
@@ -277,7 +281,7 @@ public class AWSParameters extends CredentialParameters {
      * Makes a request to delete the given message
      */
     public DeleteMessageRequest makeDeleteMessageRequest( Message message ) {
-	return new DeleteMessageRequest( getQueueURL(),
+	return new DeleteMessageRequest( getQueueUrl(),
 					 message.getReceiptHandle() );
     }
 
@@ -386,8 +390,53 @@ public class AWSParameters extends CredentialParameters {
 	JobControl.makeExecutableInDir( getEnvironmentPrefix() );
     }
 
+    public GetQueueAttributesRequest approximateNumEnqueuedMessagesRequest() {
+	return new GetQueueAttributesRequest( getQueueUrl() )
+	    .withAttributeNames( APPROXIMATE_NUM_MESSAGES );
+    }
+    
+    public int approximateNumEnqueuedMessages() {
+	try {
+	    return Integer.parseInt( 
+		     getSQS().getQueueAttributes( 
+		       approximateNumEnqueuedMessagesRequest() )
+		     .getAttributes().get( APPROXIMATE_NUM_MESSAGES ) );
+	} catch ( NumberFormatException e ) {
+	    // impossible
+	    e.printStackTrace();
+	    System.err.println( e );
+	}
+	throw new AmazonServiceException( "Possible non-existent SQS " +
+					  "queue or massive API error" );
+    }
+
+    public boolean doesInputBucketExist() {
+	return doesBucketExist( getInputBucket() );
+    }
+
+    public boolean doesOutputBucketExist() {
+	return doesBucketExist( getOutputBucket() );
+    }
+
+    public boolean doesEnvironmentBucketExist() {
+	return doesBucketExist( getEnvironmentBucket() );
+    }
+
+    public boolean doesEnvironmentZipExist() {
+	return doesObjectExistInBucket( getEnvironmentZip(),
+					getEnvironmentBucket() );
+    }
+
+    /**
+     * Checks that the overall run queue exists.
+     */
+    public boolean doesQueueExist() {
+	return doesQueueExist( getQueueUrl() );
+    }
+
     public static AWSParameters makeParameters() 
-	throws MalformedURLException, ProtocolException, IOException, ParameterException {
+	throws MalformedURLException, ProtocolException, 
+	       IOException, ParameterException {
 	return new AWSParameters( Parameters.readMapFromURL() );
     }
 

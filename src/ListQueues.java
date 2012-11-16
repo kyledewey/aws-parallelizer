@@ -6,8 +6,8 @@ import com.amazonaws.services.sqs.model.*;
 public class ListQueues {
     public static void main( String[] args ) {
 	try {
-	    AmazonSQS sqs = CredentialParameters.makeParameters().getSQS();
-	    for( String url : sqs.listQueues().getQueueUrls() ) {
+	    CredentialParameters params = CredentialParameters.makeParameters();
+	    for( String url : params.listQueuesByUrl() ) {
 		System.out.println( url );
 	    }
 	} catch ( Exception e ) {

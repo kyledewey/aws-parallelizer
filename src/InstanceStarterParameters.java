@@ -40,9 +40,6 @@ public class InstanceStarterParameters extends AWSParameters {
 		 DEFAULT_SHUTDOWN_BEHAVIOR );
 	}
     };
-
-    public static final String APPROXIMATE_NUM_MESSAGES = 
-	"ApproximateNumberOfMessages";
     // end constants
 
     // begin instance variables
@@ -53,6 +50,7 @@ public class InstanceStarterParameters extends AWSParameters {
 	throws ParameterException {
 	super( input );
 	instanceType = makeInstanceType();
+	validateAWSParams();
     }
 
     // TODO - figure out a way to correct this terrible code duplication
@@ -111,6 +109,47 @@ public class InstanceStarterParameters extends AWSParameters {
     }
 
     /**
+     * To be called after <code>params</code> is set
+     */
+    protected void validateS3Params() throws ParameterException {
+	if ( !doesInputBucketExist() ) {
+	    throw new ParameterException( "Input bucket does not exist: \"" +
+					  getInputBucket() + "\"" );
+	}
+	if ( !doesOutputBucketExist() ) {
+	    throw new ParameterException( "Output bucket does not exist: \"" +
+					  getOutputBucket() + "\"" );
+	}
+	if ( !doesEnvironmentBucketExist() ) {
+	    throw new ParameterException( "Environment bucket does not exist: \"" +
+					  getEnvironmentBucket() + "\"" );
+	}
+	if ( !doesEnvironmentZipExist() ) {
+	    throw new ParameterException( "Environment bucket does not contain " +
+					  "the environment zip file: \"" +
+					  getEnvironmentZip() + "\"" );
+	}
+    }
+
+    /**
+     * To be called after <code>params</code> is set
+     */
+    protected void validateSQSParams() throws ParameterException {
+	if ( !doesQueueExist() ) {
+	    throw new ParameterException( "SQS queue does not exist with URL: \"" +
+					  getQueueUrl() + "\"" );
+	}
+    }
+
+    /**
+     * To be called after <code>params</code> is set
+     */
+    protected void validateAWSParams() throws ParameterException {
+	validateS3Params();
+	validateSQSParams();
+    }
+	     
+    /**
      * Overridden to validate the shutdown behavior and the instance type
      */
     protected Map< String, String > makeParams( Map< String, String > input )
@@ -123,10 +162,16 @@ public class InstanceStarterParameters extends AWSParameters {
 
     public void validateNumInstances( int numInstances ) {
 	if ( numInstances <= 0 ) {
-	    throw new IllegalArgumentException( "The number of instances must be a " +
+	    throw new IllegalArgumentException( "The number of instances " +
+						"must be a " +
 						"positive integer" );
-	} else if ( approximateNumEnqueuedMessages() < numInstances ) {
-	    throw new IllegalArgumentException( "Attempted to request most instances than there are files to process" );
+	} 
+	int approx = approximateNumEnqueuedMessages();
+	if ( approx < numInstances ) {
+	    throw new IllegalArgumentException( "Attempted to request more " +
+						"instances than there are " +
+						"files to process; estimated " +
+						approx + " files left" );
 	}
     }
 
@@ -137,8 +182,8 @@ public class InstanceStarterParameters extends AWSParameters {
 		throw new NumberFormatException();
 	    }
 	} catch ( NumberFormatException e ) {
-	    throw new IllegalArgumentException( "The price must be a positive " +
-						"real number" );
+	    throw new IllegalArgumentException( "The price must be a " +
+						"positive real number" );
 	}
     }
 
@@ -179,29 +224,19 @@ public class InstanceStarterParameters extends AWSParameters {
 	    .withSpotPrice( price );
     }
 
-    public GetQueueAttributesRequest approximateNumEnqueuedMessagesRequest() {
-	return new GetQueueAttributesRequest( getQueueURL() )
-	    .withAttributeNames( APPROXIMATE_NUM_MESSAGES );
-    }
-    
-    public int approximateNumEnqueuedMessages() {
-	try {
-	    return Integer.parseInt( getSQS().getQueueAttributes( approximateNumEnqueuedMessagesRequest() )
-				     .getAttributes().get( APPROXIMATE_NUM_MESSAGES ) );
-	} catch ( NumberFormatException e ) {
-	    // impossible
-	    e.printStackTrace();
-	    System.err.println( e );
-	}
-	throw new AmazonServiceException( "Possible non-existent SQS queue or massive API error" );
-    }
-
-    public RequestSpotInstancesResult requestInstances( int numInstances, String price ) {
-	return getEC2().requestSpotInstances( makeRequest( numInstances, price ) );
+    public RequestSpotInstancesResult requestInstances( int numInstances, 
+							String price ) {
+	return getEC2().requestSpotInstances( 
+		 makeRequest( numInstances, price ) );
     }
 
     public static InstanceStarterParameters makeParameters() 
 	throws IOException, ParameterException {
 	return new InstanceStarterParameters( Parameters.readMapFromFile() );
+    }
+
+    public static InstanceStarterParameters makeParameters( String filename ) 
+	throws IOException, ParameterException {
+	return new InstanceStarterParameters( Parameters.readMapFromFile( filename ) );
     }
 }
