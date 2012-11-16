@@ -128,24 +128,36 @@ public class CredentialParameters extends Parameters {
     }
 
     /**
-     * Determines whether or not we are running on
-     * a persistent spot request
+     * Gets the persistent spot instance request id corresponding to this instance,
+     * or null if the instance isn't backed by a persistent spot instance request.
      */
-    public boolean isPersistentSpotRequest() throws IOException {
-	return !getEC2()
+    public String getSpotInstanceRequestId() 
+	throws IOException {
+	List< SpotInstanceRequest > requests =
+	    getEC2()
 	    .describeSpotInstanceRequests( makeSpotRequestRequest() )
-	    .getSpotInstanceRequests()
-	    .isEmpty();
+	    .getSpotInstanceRequests();
+	if ( requests.size() == 0 ) {
+	    // not a spot request
+	    return null;
+	} else if ( requests.size() == 1 ) {
+	    return requests.get( 0 ).getSpotInstanceRequestId();
+	} else {
+	    // should be impossible based on filter conditions
+	    throw new AmazonClientException( "Got more than one match for spot instance " +
+					     "request" );
+	}
     }
-
+	    
     /**
-     * Cancels the spot request with the given instance id
+     * Cancels the spot request with the given spot instance request id
      */
-    public CancelSpotInstanceRequestsResult cancelSpotRequest( String instanceId ) 
+    public CancelSpotInstanceRequestsResult cancelSpotRequest( String spotInstanceRequestId ) 
 	throws IOException {
 	return getEC2()
 	    .cancelSpotInstanceRequests( 
-	       new CancelSpotInstanceRequestsRequest( Arrays.asList( instanceId ) ) );
+	       new CancelSpotInstanceRequestsRequest( 
+		    Arrays.asList( spotInstanceRequestId ) ) );
     }
 
     /**
@@ -155,9 +167,8 @@ public class CredentialParameters extends Parameters {
      */
     public CancelSpotInstanceRequestsResult cancelMeIfPersistentSpot() 
 	throws IOException {
-	return isPersistentSpotRequest() ? 
-	    cancelSpotRequest( InstanceHelpers.getInstanceId() ) :
-	    null;
+	String id = getSpotInstanceRequestId();
+	return ( id != null ) ? cancelSpotRequest( id ) : null;
     }
 
     public static CredentialParameters makeParameters()
