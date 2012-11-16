@@ -9,7 +9,7 @@ import java.util.regex.*;
  * Provides a default implementation of the makeParams routine.
  * @author Kyle Dewey
  */
-public abstract class ParametersBase implements Parameters {
+public abstract class Parameters {
     // begin constants
     // delimeter for making error messages
     public static final String ERROR_DELIM = ", ";
@@ -25,7 +25,7 @@ public abstract class ParametersBase implements Parameters {
     protected Map< String, String > params;
     // end instance variables
 
-    public ParametersBase( Map< String, String > input ) throws ParameterException {
+    public Parameters( Map< String, String > input ) throws ParameterException {
 	params = makeParams( input );
     }
 

@@ -372,6 +372,6 @@ public class AWSParameters extends CredentialParameters {
 
     public static AWSParameters makeParameters() 
 	throws MalformedURLException, ProtocolException, IOException, ParameterException {
-	return new AWSParameters( ParametersBase.readMapFromURL() );
+	return new AWSParameters( Parameters.readMapFromURL() );
     }
 }

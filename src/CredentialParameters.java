@@ -12,7 +12,7 @@ import java.util.*;
  * Parameters needed to work with credentials.
  * @author Kyle Deewey
  */
-public class CredentialParameters extends ParametersBase {
+public class CredentialParameters extends Parameters {
     // begin constants
     public static final String ACCESS_KEY_ID = "accessKey";
     public static final String SECRET_KEY_ID = "secretKey";
@@ -74,7 +74,7 @@ public class CredentialParameters extends ParametersBase {
 
     public static CredentialParameters makeParameters()
 	throws IOException, ParameterException {
-	return new CredentialParameters( ParametersBase.readMapFromFile() );
+	return new CredentialParameters( Parameters.readMapFromFile() );
     }
 }
 	    
