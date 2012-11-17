@@ -58,11 +58,55 @@ we have completely finished processing a file and optionally uploaded the
 output.  If there is a failure in between, the message to process the file
 remains, and another instance will later process the file.
 
-### Low-Level Usage ###
-(TODO: Make this much, much more complete.  Also, automate as much of this as
- possible.  A good portion is already automated, but it could be better.)
+### System Overview ###
+The system has the following components:
 
-1. Make an S3 bucket specifically for input files
+1. An S3 bucket holding input files
+2. An S3 bucket holding the file anlaysis program and its execution environment
+3. An S3 bucket holding output files
+4. An SQS queue holding filenames that have yet to be processed
+5. Any number of EC2 instances performing the actual processing, using a
+   custom AMI (herein referred to as "workers").
+
+The lifecycle of each worker is roughly as follows:
+
+```java
+bootUp();
+String zipName = param( ENVIRONMENT_ZIP_FILE_NAME );
+s3EnvironmentBucket.getFile( zipName );
+execute( "unzip", zipName );
+execute( "cd", param( ENVIRONMENT_PREFIX ) );
+execute( "chmod", "a+x", param( ANALYSIS_FILE_NAME ) );
+
+while ( sqsQueue.containsMessages() ) {
+  Message message = sqsQueue.getMessage();
+  String filename = message.getContents();
+  s3InputBucket.getFile( filename );
+  String commandOutput = execute( param( ANALYSIS_FILE_NAME ),
+                                  filename );
+  if ( isFile( commandOutput ) ) {
+    s3OutputBucket.putFile( commandOutput );
+    deleteFile( commandOutput );
+  }
+  sqsQueue.doneWithMessage( message );
+  deleteFile( filename );
+}
+
+if ( param( TERMINATE_ON_SHUTDOWN ) == true ) {
+  if ( param( PERSISTENT_SPOT_INSTANCE ) == true ) {
+    ec2.cancelSpotInstanceRequest( this );
+  }
+  execute( "shutdown", "-h", "now" );
+}
+```
+  
+
+### General Usage ###
+These are the basic steps to using the framework.  Many of these steps are at least
+partially automated with some included scripts.  This information is provided mostly
+for troubleshooting reasons.
+
+1. Make an S3 bucket specifically for input files.
 2. Upload all input files to the S3 bucket
 3. Make an S3 bucket specifically for the execution environment
 4. Package up the entire execution environment into a zip file
@@ -74,4 +118,293 @@ remains, and another instance will later process the file.
     as user-defined text at instance creation time.
 9. Wait until they complete.
 10. Download all the output from the S3 bucket.
+
+### Usage in More Detail ###
+
+Edit your <code>parameters.txt</code> file to contain at least your access key and
+your secret key.
+Then run <code>PrepBucket</code> to make and upload your files to a bucket of your choice.
+The command works as such:
+```console
+java PrepBucket bucket_name file_1 file_2 ... file_n
+```
+
+...where <code>bucket_name</code> is the name of your bucket.  If <code>bucket_name</code>
+doesn't already exist, it will create a new bucket with that name.  Each of the
+files specified will be uploaded to that bucket.
+
+Now make S3 buckets for the environment and for the output files.  Personally I just
+do this through the AWS Management Console.
+
+Now package up your analysis script and any environment it needs into a zip file.
+For example, say our analysis script is named <code>analysis.sh</code>, and it needs
+the files <code>foo.txt</code> and <code>bar.txt</code> in order to function.  Then we
+would do:
+```console
+mkdir environment
+cp analysis.sh foo.txt bar.txt environment
+zip -r environment.zip environment
+```
+
+...which leaves us with the complete environment <code>environment.zip</code>.
+This file can be uploaded with <code>PrepBucket</code>, through the AWS Management Console,
+or with whatever you prefer.
+
+Now the SQS queue needs to be prepped.  Make a new SQS queue in the AWS Management Console,
+and **set the retention period to 14 days and the visibility timeout to whatever you want**.
+Due to a oddity in the AWS APIs, if you don't set these properly things can get very confused,
+as this configuration information is used in identifying SQS queues to some degree.
+
+At this point, you need to add all the parameters needed to run <code>BucketToQueue</code>
+(see the "Parameters" section for this) to <code>parameters.txt</code>.  **Be sure to use the
+same visibility timeout as specified before for the SQS queue creation.**
+
+Once the parameters are added, you can run <code>BucketToQueue</code> like so:
+```console
+java BucketToQueue input_bucket_name queue_name
+```
+
+...this will examine the files in <code>input_bucket</code>.  For each file, it will
+put an SQS message into the queue <code>queue_name</code> containing the name of the file.
+
+Now for the fun part: starting instances.  For this, you'll need to add all the parameters
+necessary for running <code>StartInstances</code> to <code>parameters.txt</code> (see 
+the "Parameters" section for more on this). Once the parameters are added to 
+<code>parameters.txt</code>, run <code>StartInstances</code> like so:
+```console
+java StartInstances number_to_start max_price
+```
+
+...where <code>number_to_start</code> is the number of instances to start and
+<code>max_price</code> is the maximum bidding price for spot instances. (Due to the nature
+of this application, only spot instances can be used in this manner.)
+
+Now you wait.  You can check on the progress of the analysis through the AWS Management
+Console.  The number of messages in flight corresponds to how many files are being processed
+at once, and the number of messages enqueued are the number of files that are awaiting
+processing.  You can also see output files rolling into your S3 output bucket.
+
+Once the analysis is complete, instances will start terminating (as long as you've configured
+them to do so).  At any point, you can download the output files using the <code>Download</code>
+command, which has been included.  It can be run like so:
+```console
+java Download bucket_name
+```
+
+...where <code>bucket_name</code> is the name of the bucket from which you want to download
+files.
+
+### Notes ###
+The following are just some scattered notes about the framework.
+
+1. Instances can be added at any time with the <code>StartInstances</code>.  It's perfectly
+   fine to add additional instances later to something that is already running.
+2. The framework is highly fault-tolerant.  A single instance failing will result in only
+   the loss of progress on whatever specific file it was analyzing.  The file itself will
+   restart analysis on another instance.
+
+### Known Bugs ###
+Just one highly tricky one: once the SQS queue is prepped with <code>BucketToQueue</code>,
+analysis must complete within 14 days (the maximum retention period).  After this point,
+messages will spontaneously delete themselves, making the analysis terminate prematurely.
+Dealing with this in an automated fashion is a *very* hard problem, and really isn't worth
+the effort.  If this happens, here is a workaround:
+
+1. Download all output files
+2. Determine which input files were processed based this output.
+3. Delete these files which had been processed from the input bucket.  Alternatively, create
+   a new bucket containing only those files which have *not* been processed, and reupload
+   those input files to this new bucket.
+4. Run <code>BucketToQueue</code> again on the input bucket (or the new bucket if you went
+   with that route).
+5. Run <code>StartInstances</code> again.  Note that if you went the alternate route you'll
+   need to change the parameter for the input bucket before you can start instances again.
+
+### Parameters ###
+Parameters are specified in a file named <code>parameters.txt</code>, except for
+<code>StartInstances</code> which explicitly asks for its file containing parameters.
+There is one parameter per line, in the format:
+```
+parameter_name=value
+```
+Note that it is sensitive to whitespace.
+
+All programs need the <code>secretKey</code> and the <code>accessKey</code> parameters specified.
+<code>CancelPersistent</code> (cloud only) and <code>Client</code> (cloud only) use all the
+parameters up until <code>shouldShutdown</code> in the below parameters table.
+<code>StartInstances</code> needs all the parameters in the table below.
+
+There are a number of parameters in the framework, and different commands need different ones.
+A listing of these parameters, along with information pertaining to what they are and their
+default values, is below.  Note that if any parameter's default value is "N/A", this
+means that the parameter is required as it has no reasonable default.
+
+<table border="1">
+  <tr>
+    <th>Name</th>
+    <th>Description</th>
+    <th>Default Value</th>
+  </tr>
+
+  <tr>
+    <td><code>accessKey</code></td>
+    <td>Your AWS access key</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>secretKey</code></td>
+    <td>Your AWS secret key</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>EC2SQSRegion</code></td>
+    <td>Which region you want the analysis to run in.  For a listing of available
+      regions, consult the <a href="http://docs.amazonwebservices.com/general/latest/gr/rande.html">Amazon AWS documentation</a>.</td>
+    <td><code>us-east-1</code></td>
+  </tr>
+
+  <tr>
+    <td><code>inputBucket</code></td>
+    <td>The name of the S3 bucket that holds input files</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>outputBucket</code></td>
+    <td>The name of the S3 bucket that holds input files</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>queueURL</code></td>
+    <td>The URL of the SQS queue that holds the names of files that have yet to be processed</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>environmentBucket</code></td>
+    <td>The name of the S3 bucket that holds execution environment zip files</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>environmentPrefix</code></td>
+    <td>The directory in the zip file that contains the analysis program.  In the example
+      in the "Usage in More Detail" section, this would be "environment".</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>environmentZip</code></td>
+    <td>Name of the zip file containing the execution environment.  Must exist within the S3
+      bucket specified by the <code>environmentBucket</code> parameter.</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>analysisProgram</code></td>
+    <td>Name of the analysis program contained underneath <code>environmentPrefix</code> in the
+      zip file specified by <code>environmentZip</code></td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>visibilityTimeout</code></td>
+    <td>The visibility timeout for the SQS queue specified by <code>queueURL</code>, 
+      in seconds.</td>
+    <td><code>600</code> (10 minutes)</td>
+  </tr>
+
+  <tr>
+    <td><code>numThreads</code></td>
+    <td>The number of files to process in parallel on a given instance.  Use <code>0</code> to
+      use the number of available virtual threads on the given instance.</td>
+    <td><code>0</code></td>
+  </tr>
+
+  <tr>
+    <td><code>shouldShutdown</code></td>
+    <td>Whether or not to engage shutdown procedures whenever we run out of files or the analysis
+      crashes, whatever comes first.  For a persistent spot instance, this will also mean
+      canceling the spot request behind the instance.  As to what exactly happens on shutdown,
+      see the <code>shutdownBehavior</code> parameter.</td>
+    <td><code>true</code></td>
+  </tr>
+
+  <tr>
+    <td><code>keyPair</code></td>
+    <td>The name of your key pair used for starting instances on AWS.</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>imageID</code></td>
+    <td>The ID of the AMI that has been instrumented with the framework code.</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>securityGroup</code></td>
+    <td>The name of the AWS security group to use</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>instanceType</code></td>
+    <td>The type of instance to use.  The name must be one of the names listed in
+      <a href="http://docs.amazonwebservices.com/AWSJavaSDK/latest/javadoc/">
+	The Amazon AWS documentation</a>.</td>
+    <td>N/A</td>
+  </tr>
+
+  <tr>
+    <td><code>shutdownBehavior</code></td>
+    <td>What to do when <code>shutdown -h now</code> is run.
+      Specify <code>stop</code> to pause the instance, allowing execution to be resumed later
+      (through some means external to this framework).  You will still be charged for the
+      time an instance is stopped, even though it is not actively executing anything.
+      Specify <code>terminate</code> to completely end the instance.  You stop being charged
+      for execution time at this point.  For further information, consult 
+      <a href="http://support.rightscale.com/06-FAQs/FAQ_0149_-_What%27s_the_difference_between_Terminating_and_Stopping_an_EC2_Instance%3F">this FAQ</a>.</td>
+    <td><code>terminate</code></td>
+  </tr>
+
+  <tr>
+    <td><code>spotType</code></td>
+    <td>The kind of spot instance to use.
+      Specify <code>on-time</code> for a spot request that ends once the instance terminates.
+      Specify <code>persistent</code> for a spot request that only ends once the request is
+      explicitly canceled.  If <code>shouldShutdown</code> is set to <code>true</code>, then
+      the request will be canceled once we are done processing files, or if the framework
+      crashes but the machine remains online.  If termination happens for any other reason
+      (i.e. AWS failure, max bid price exceeds current maximum bid, etc.), then the request
+      remains, and can result in the instance automatically being brought back online.  Cost
+      is only accumulated while a machine is online.</td>
+    <td><code>one-time</code></td>
+  </tr>
+</table>
+
+### Making Your Own AMI ###
+The framework expects a certain kind of AMI, as specified through the <code>imageID</code>
+parameter.  To make your own AMI that can be used in tandem with <code>imageID</code>:
+
+1. Start an instance on AWS
+2. Copy over all <code>.class</code> files to the instance, along with <code>init_stub.sh</code>.
+   Put these in the home folder of <code>ec2-user</code>.
+3. <code>SSH</code> into the machine.
+4. Append the contents of <code>init_stub.sh</code> to <code>/etc/rc.local</code>.
+   In order to do this, first become root with <code>sudo -s</code>, and then run
+   <code>cat init_stub.sh >> /etc/rc.local</code>
+5. From the AWS management console, right click on your instance and choose 
+   "Create Image (EBS AMI)"
+6. Once that completes, you'll be able to see your new AMI underneath <code>IMAGES/AMIs</code>
+   in the AWS Management Console.  Use the AMI ID for <code>imageID</code>.
+
+### Pre-made AMI ###
+At the time of this writing, there is a development AMI that is still being stress tested.
+Releasing the AMI is a bit annoying because I need to revoke my keys before doing so, which adds
+to the development time.  I plan to release the AMI soon in the future, but only after I think
+it's stable enough for general use.
 
