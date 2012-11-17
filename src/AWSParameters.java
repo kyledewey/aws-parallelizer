@@ -25,8 +25,6 @@ public class AWSParameters extends CredentialParameters {
     public static final String ENVIRONMENT_PREFIX_ID = "environmentPrefix";
     public static final String ENVIRONMENT_ZIP_FILE_ID = "environmentZip";
     public static final String ANALYSIS_PROGRAM_NAME_ID = "analysisProgram";
-    public static final String ACCESS_KEY_ID = "accessKey";
-    public static final String SECRET_KEY_ID = "secretKey";
 
     // optional parameters
     // visibility timeout, in seconds
