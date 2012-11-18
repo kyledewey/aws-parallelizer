@@ -353,9 +353,9 @@ means that the parameter is required as it has no reasonable default.
 
   <tr>
     <td><code>instanceType</code></td>
-    <td>The type of instance to use.  The name must be one of the names listed in
-      <a href="http://docs.amazonwebservices.com/AWSJavaSDK/latest/javadoc/">
-	The Amazon AWS documentation</a>.</td>
+    <td>The type of instance to use.  The name must be one of the names listed in the
+      <a href="http://docs.amazonwebservices.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/ec2/model/InstanceType.html">
+      	 Amazon AWS documentation</a>.</td>
     <td>N/A</td>
   </tr>
 
