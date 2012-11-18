@@ -403,8 +403,21 @@ parameter.  To make your own AMI that can be used in tandem with <code>imageID</
    in the AWS Management Console.  Use the AMI ID for <code>imageID</code>.
 
 ### Pre-made AMI ###
-At the time of this writing, there is a development AMI that is still being stress tested.
-Releasing the AMI is a bit annoying because I need to revoke my keys before doing so, which adds
-to the development time.  I plan to release the AMI soon in the future, but only after I think
-it's stable enough for general use.
+I currently do not have a public version of the AMI I use, since:
 
+1. I would like to test it more for reliability
+2. Bundling an AMI for public use is a hassle
+3. The AMI bundling guide within the [AWS Documentation](http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/AESDG-chapter-sharingamis.html) does not make me feel confident that I won't somehow accidentally leak my AWS credentials.
+
+At some point in the future I may release this, but it likely won't be any time soon (if at all).
+If you want your own AMI I'd be happy to answer any emails regarding making your own.
+Additionally, if there is a demand for an AMI it will encourage me to make a public one.
+
+### Disclaimer ###
+There is guarentee that this will work, and there is absolutely no warranty, implied or otherwise.
+This code might work exactly as I've layed out here, or it may hang indefinitely doing nothing as
+AWS charges you for time.  (At least once this happened due to a bug.)
+
+Personally I check on runs every few hours making sure progress is still being made, 
+and I'll even go into the metrics in the AWS console to make sure that CPU usage is still around
+100%.  (CPU usage will vary on your specific workloads.)
