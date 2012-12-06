@@ -390,16 +390,22 @@ means that the parameter is required as it has no reasonable default.
 The framework expects a certain kind of AMI, as specified through the <code>imageID</code>
 parameter.  To make your own AMI that can be used in tandem with <code>imageID</code>:
 
-1. Start an instance on AWS
-2. Copy over all <code>.class</code> files to the instance, along with <code>init_stub.sh</code>.
-   Put these in the home folder of <code>ec2-user</code>.
-3. <code>SSH</code> into the machine.
-4. Append the contents of <code>init_stub.sh</code> to <code>/etc/rc.local</code>.
+1. Download the AWS parallelizer code (<code>git clone git://github.com/kyledewey/aws-parallelizer.git</code>).
+2. Go to the <code>src/</code> directory (<code>cd src</code>).
+3. Download [version 1.3.25 of the AWS Java SDK](http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip), putting it in the same directory. (<code>wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip</code>).
+4. Unzip the archive (<code>unzip aws-java-sdk-1.3.25.zip</code>).
+5. Include all the .jar files in the archive in your Java classpath (<code>export CLASSPATH=.:aws-java-sdk-1.3.25/lib/aws-java-sdk-1.3.25.jar:aws-java-sdk-1.3.25/lib/aws-java-sdk-flow-build-tools-1.3.25.jar:aws-java-sdk-1.3.25/lib/aws-java-sdk-1.3.25-sources.jar:aws-java-sdk-1.3.25/lib/aws-java-sdk-1.3.25-javadoc.jar:aws-java-sdk-1.3.25/third-party/jackson-core-1.8/jackson-core-asl-1.8.7.jar:aws-java-sdk-1.3.25/third-party/java-mail-1.4.3/mail-1.4.3.jar:aws-java-sdk-1.3.25/third-party/commons-codec-1.3/commons-codec-1.3.jar:aws-java-sdk-1.3.25/third-party/httpcomponents-client-4.1.1/httpcore-4.1.jar:aws-java-sdk-1.3.25/third-party/httpcomponents-client-4.1.1/httpclient-4.1.1.jar:aws-java-sdk-1.3.25/third-party/jackson-mapper-1.8/jackson-mapper-asl-1.8.7.jar:aws-java-sdk-1.3.25/third-party/freemarker-2.3.18/freemarker-2.3.18.jar:aws-java-sdk-1.3.25/third-party/commons-logging-1.1.1/commons-logging-1.1.1.jar:aws-java-sdk-1.3.25/third-party/spring-3.0/spring-core-3.0.7.jar:aws-java-sdk-1.3.25/third-party/spring-3.0/spring-context-3.0.7.jar:aws-java-sdk-1.3.25/third-party/spring-3.0/spring-beans-3.0.7.jar:aws-java-sdk-1.3.25/third-party/aspectj-1.6/aspectjrt.jar:aws-java-sdk-1.3.25/third-party/aspectj-1.6/aspectjweaver.jar:aws-java-sdk-1.3.25/third-party/stax-ri-1.2.0/stax-1.2.0.jar:aws-java-sdk-1.3.25/third-party/stax-api-1.0.1/stax-api-1.0.1.jar</code>).
+6. Compile the code (<code>javac *.java</code>)
+7. Start an instance on AWS
+8. Copy over all <code>.class</code> files to the instance, along with <code>init_stub.sh</code> and the
+   uncompressed AWS Java SDK archive. Put these in the home folder of <code>ec2-user</code>.
+9. <code>SSH</code> into the machine.
+10. Append the contents of <code>init_stub.sh</code> to <code>/etc/rc.local</code>.
    In order to do this, first become root with <code>sudo -s</code>, and then run
    <code>cat init_stub.sh >> /etc/rc.local</code>
-5. From the AWS management console, right click on your instance and choose 
+11. From the AWS management console, right click on your instance and choose 
    "Create Image (EBS AMI)"
-6. Once that completes, you'll be able to see your new AMI underneath <code>IMAGES/AMIs</code>
+12. Once that completes, you'll be able to see your new AMI underneath <code>IMAGES/AMIs</code>
    in the AWS Management Console.  Use the AMI ID for <code>imageID</code>.
 
 ### Pre-made AMI ###
