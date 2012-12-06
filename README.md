@@ -394,7 +394,7 @@ parameter.  To make your own AMI that can be used in tandem with <code>imageID</
 2. Go to the <code>src/</code> directory. (<code>cd src</code>)
 3. Download [version 1.3.25 of the AWS Java SDK](http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip), putting it in the same directory. (<code>wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip</code>).
 4. Unzip the archive (<code>unzip aws-java-sdk-1.3.25.zip</code>).
-5. Include all the .jar files in the archive in your Java classpath (<code>export CLASSPATH=.:`find . -name '*.jar' | xargs | tr ' ' ':'`</CODE>).
+5. Include all the .jar files in the archive in your Java classpath (<code>export CLASSPATH=.:``find . -name '*.jar' | xargs | tr ' ' ':'``</code>).
 6. Compile the code (<code>javac *.java</code>)
 7. Start an instance on AWS
 8. Copy over all <code>.class</code> files to the instance, along with <code>init_stub.sh</code> and the
