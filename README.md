@@ -392,6 +392,7 @@ parameter.  To make your own AMI that can be used in tandem with <code>imageID</
 
 1. Download the AWS parallelizer code (<code>git clone git://github.com/kyledewey/aws-parallelizer.git</code>).
 2. Go to the <code>src/</code> directory.
+
 ```console
 cd src
 ```
