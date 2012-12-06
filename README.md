@@ -236,7 +236,7 @@ parameters up until `shouldShutdown` in the below parameters table.
 
 There are a number of parameters in the framework, and different commands need different ones.
 A listing of these parameters, along with information pertaining to what they are and their
-default values, is below.  Note that if any parameter's default value is "N/A", this
+default values, is below.  Note that if any parameter's default value is `"N/A"`, this
 means that the parameter is required as it has no reasonable default.
 
 <table border="1">
@@ -247,112 +247,112 @@ means that the parameter is required as it has no reasonable default.
   </tr>
 
   <tr>
-    <td>`accessKey`</td>
+    <td><code>accessKey</code></td>
     <td>Your AWS access key</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`secretKey`</td>
+    <td><code>secretKey</code></td>
     <td>Your AWS secret key</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`EC2SQSRegion`</td>
+    <td><code>EC2SQSRegion</code></td>
     <td>Which region you want the analysis to run in.  For a listing of available
       regions, consult the <a href="http://docs.amazonwebservices.com/general/latest/gr/rande.html">Amazon AWS documentation</a>.</td>
-    <td>`us-east-1`</td>
+    <td><code>us-east-1</code></td>
   </tr>
 
   <tr>
-    <td>`inputBucket`</td>
+    <td><code>inputBucket</code></td>
     <td>The name of the S3 bucket that holds input files</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`outputBucket`</td>
+    <td><code>outputBucket</code></td>
     <td>The name of the S3 bucket that holds input files</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`queueURL`</td>
+    <td><code>queueURL</code></td>
     <td>The URL of the SQS queue that holds the names of files that have yet to be processed</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`environmentBucket`</td>
+    <td><code>environmentBucket</code></td>
     <td>The name of the S3 bucket that holds execution environment zip files</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`environmentPrefix`</td>
+    <td><code>environmentPrefix</code></td>
     <td>The directory in the zip file that contains the analysis program.  In the example
       in the "Usage in More Detail" section, this would be "environment".</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`environmentZip`</td>
+    <td><code>environmentZip</code></td>
     <td>Name of the zip file containing the execution environment.  Must exist within the S3
-      bucket specified by the `environmentBucket` parameter.</td>
+      bucket specified by the <code>environmentBucket</code> parameter.</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`analysisProgram`</td>
-    <td>Name of the analysis program contained underneath `environmentPrefix` in the
-      zip file specified by `environmentZip`</td>
+    <td><code>analysisProgram</code></td>
+    <td>Name of the analysis program contained underneath <code>environmentPrefix</code> in the
+      zip file specified by <code>environmentZip</code></td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`visibilityTimeout`</td>
-    <td>The visibility timeout for the SQS queue specified by `queueURL`, 
+    <td><code>visibilityTimeout</code></td>
+    <td>The visibility timeout for the SQS queue specified by <code>queueURL</code>, 
       in seconds.</td>
-    <td>`600` (10 minutes)</td>
+    <td><code>600</code> (10 minutes)</td>
   </tr>
 
   <tr>
-    <td>`numThreads`</td>
-    <td>The number of files to process in parallel on a given instance.  Use `0` to
+    <td><code>numThreads</code></td>
+    <td>The number of files to process in parallel on a given instance.  Use <code>0</code> to
       use the number of available virtual threads on the given instance.</td>
-    <td>`0`</td>
+    <td><code>0</code></td>
   </tr>
 
   <tr>
-    <td>`shouldShutdown`</td>
+    <td><code>shouldShutdown</code></td>
     <td>Whether or not to engage shutdown procedures whenever we run out of files or the analysis
       crashes, whatever comes first.  For a persistent spot instance, this will also mean
       canceling the spot request behind the instance.  As to what exactly happens on shutdown,
-      see the `shutdownBehavior` parameter.</td>
-    <td>`true`</td>
+      see the <code>shutdownBehavior</code> parameter.</td>
+    <td><code>true</code></td>
   </tr>
 
   <tr>
-    <td>`keyPair`</td>
+    <td><code>keyPair</code></td>
     <td>The name of your key pair used for starting instances on AWS.</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`imageID`</td>
+    <td><code>imageID</code></td>
     <td>The ID of the AMI that has been instrumented with the framework code.</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`securityGroup`</td>
+    <td><code>securityGroup</code></td>
     <td>The name of the AWS security group to use</td>
     <td>N/A</td>
   </tr>
 
   <tr>
-    <td>`instanceType`</td>
+    <td><code>instanceType</code></td>
     <td>The type of instance to use.  The name must be one of the names listed in the
       <a href="http://docs.amazonwebservices.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/ec2/model/InstanceType.html">
       	 Amazon AWS documentation</a>.</td>
@@ -360,29 +360,29 @@ means that the parameter is required as it has no reasonable default.
   </tr>
 
   <tr>
-    <td>`shutdownBehavior`</td>
-    <td>What to do when `shutdown -h now` is run.
-      Specify `stop` to pause the instance, allowing execution to be resumed later
+    <td><code>shutdownBehavior</code></td>
+    <td>What to do when <code>shutdown -h now</code> is run.
+      Specify <code>stop</code> to pause the instance, allowing execution to be resumed later
       (through some means external to this framework).  You will still be charged for the
       time an instance is stopped, even though it is not actively executing anything.
-      Specify `terminate` to completely end the instance.  You stop being charged
+      Specify <code>terminate</code> to completely end the instance.  You stop being charged
       for execution time at this point.  For further information, consult 
       <a href="http://support.rightscale.com/06-FAQs/FAQ_0149_-_What%27s_the_difference_between_Terminating_and_Stopping_an_EC2_Instance%3F">this FAQ</a>.</td>
-    <td>`terminate`</td>
+    <td><code>terminate</code></td>
   </tr>
 
   <tr>
-    <td>`spotType`</td>
+    <td><code>spotType</code></td>
     <td>The kind of spot instance to use.
-      Specify `on-time` for a spot request that ends once the instance terminates.
-      Specify `persistent` for a spot request that only ends once the request is
-      explicitly canceled.  If `shouldShutdown` is set to `true`, then
+      Specify <code>on-time</code> for a spot request that ends once the instance terminates.
+      Specify <code>persistent</code> for a spot request that only ends once the request is
+      explicitly canceled.  If <code>shouldShutdown</code> is set to <code>true</code>, then
       the request will be canceled once we are done processing files, or if the framework
       crashes but the machine remains online.  If termination happens for any other reason
       (i.e. AWS failure, max bid price exceeds current maximum bid, etc.), then the request
       remains, and can result in the instance automatically being brought back online.  Cost
       is only accumulated while a machine is online.</td>
-    <td>`one-time`</td>
+    <td><code>one-time</code></td>
   </tr>
 </table>
 
