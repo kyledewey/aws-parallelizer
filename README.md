@@ -391,19 +391,20 @@ The framework expects a certain kind of AMI, as specified through the `imageID`
 parameter.  To make your own AMI that can be used in tandem with `imageID`:
 
 1. Download the AWS parallelizer code (`git clone git://github.com/kyledewey/aws-parallelizer.git`).
-2. Go to the `src/` directory. (`cd src`)
+2. Go to the `src/` directory. (`cd aws-parallelizer/src`)
 3. Download [version 1.3.25 of the AWS Java SDK](http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip), putting it in the same directory. (`wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip`).
 4. Unzip the archive (`unzip aws-java-sdk-1.3.25.zip`).
-5. Include all the .jar files in the archive in your Java classpath (``export CLASSPATH=.:`find . -name '*.jar' | xargs | tr ' ' ':'` ``).
-6. Compile the code (`javac *.java`)
-7. Start an instance on AWS
-8. Copy over all `.class` files to the instance, along with `init_stub.sh` and the
+5. (optional) Remove unnecessary files from the zip file (cuts down size by around 4.5X) (`rm -rf aws-java-sdk-1.3.25/documentation aws-java-sdk-1.3.25/samples`)
+6. Include all the .jar files in the archive in your Java classpath (``export CLASSPATH=.:`find . -name '*.jar' | xargs | tr ' ' ':'` ``).
+7. Compile the code (`javac *.java`)
+8. Start an instance on AWS
+9. Copy over all `.class` files to the instance, along with `init_stub.sh` and the
    uncompressed AWS Java SDK archive. Put these in the home folder of `ec2-user`.
-9. `SSH` into the machine.
-10. Append the contents of `init_stub.sh` to `/etc/rc.local`.
-11. From the AWS management console, right click on your instance and choose 
+10. `SSH` into the machine.
+11. Append the contents of `init_stub.sh` to `/etc/rc.local`. (`cat init_stub.sh >> /etc/rc.local`).
+12. From the AWS management console, right click on your instance and choose 
    "Create Image (EBS AMI)"
-12. Once that completes, you'll be able to see your new AMI underneath `IMAGES/AMIs`
+13. Once that completes, you'll be able to see your new AMI underneath `IMAGES/AMIs`
    in the AWS Management Console.  Use the AMI ID for `imageID`.
 
 ### Pre-made AMI ###
