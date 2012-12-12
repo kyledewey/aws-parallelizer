@@ -121,6 +121,8 @@ for troubleshooting reasons.
 
 ### Usage in More Detail ###
 
+Compile the code and set up your UNIX environment by following steps 1-7 of the "Making Your Own AMI" section.
+
 Edit your `parameters.txt` file to contain at least your access key and
 your secret key.
 Then run `PrepBucket` to make and upload your files to a bucket of your choice.
@@ -172,12 +174,18 @@ necessary for running `StartInstances` to `parameters.txt` (see
 the "Parameters" section for more on this). Once the parameters are added to 
 `parameters.txt`, run `StartInstances` like so:
 ```console
-java StartInstances number_to_start max_price
+java StartInstances number_to_start max_price parameters.txt
 ```
 
 ...where `number_to_start` is the number of instances to start and
-`max_price` is the maximum bidding price for spot instances. (Due to the nature
-of this application, only spot instances can be used in this manner.)
+`max_price` is the maximum bidding price for spot instances.
+`parameters.txt` must also be specified. 
+ The intention is that different parameter files can be used for different kinds of runs.
+Outside of `StartInstances`, the only parameters used off of the cloud are `accessKey` and `secretKey`. 
+
+Due to the nature of this application, only spot instances can be used.
+Adding support for on-demand instances is a possible future feature,
+but at this time I have no intention of adding it.
 
 Now you wait.  You can check on the progress of the analysis through the AWS Management
 Console.  The number of messages in flight corresponds to how many files are being processed
@@ -374,7 +382,7 @@ means that the parameter is required as it has no reasonable default.
   <tr>
     <td><code>spotType</code></td>
     <td>The kind of spot instance to use.
-      Specify <code>on-time</code> for a spot request that ends once the instance terminates.
+      Specify <code>one-time</code> for a spot request that ends once the instance terminates.
       Specify <code>persistent</code> for a spot request that only ends once the request is
       explicitly canceled.  If <code>shouldShutdown</code> is set to <code>true</code>, then
       the request will be canceled once we are done processing files, or if the framework
