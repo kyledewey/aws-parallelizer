@@ -181,7 +181,8 @@ java StartInstances number_to_start max_price parameters.txt
 `max_price` is the maximum bidding price for spot instances.
 `parameters.txt` must also be specified. 
  The intention is that different parameter files can be used for different kinds of runs.
-Outside of `StartInstances`, the only parameters used off of the cloud are `accessKey` and `secretKey`. 
+Outside of `StartInstances`, the only parameters used off of the cloud are `accessKey` and `secretKey`.
+As such, it is possible to have a special `parameters.txt` that contains only `accessKey` and `secretKey`, and then other parameters files (with names different than `parameters.txt`) that are specific to different kinds of runs you want to perform.
 
 Due to the nature of this application, only spot instances can be used.
 Adding support for on-demand instances is a possible future feature,
