@@ -428,7 +428,7 @@ If you want your own AMI I'd be happy to answer any emails regarding making your
 Additionally, if there is a demand for an AMI it will encourage me to make a public one.
 
 ### Disclaimer ###
-There is guarentee that this will work, and there is absolutely no warranty, implied or otherwise.
+There is no guarantee that this will work, and there is absolutely no warranty, implied or otherwise.
 This code might work exactly as I've layed out here, or it may hang indefinitely doing nothing as
 AWS charges you for time.  (At least once this happened due to a bug.)
 
