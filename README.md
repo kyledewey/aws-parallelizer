@@ -180,7 +180,7 @@ $ java StartInstances number_to_start max_price parameters.txt
 ```
 
 A more detailed description of each parameter is below:
-- `number_to_start`: The number of instances to start
+- `number_to_start`: The number of instances to start.
 - `max_price`: The maximum bidding price for spot instances, in US dollars.  (i.e. to specify 1.3 US cents, use 0.013)
 - `parameters.txt`: The name of the parameters file to use.  For most setups, this will be `parameters.txt`, as-is. The intention is that different parameter files can be used for different kinds of runs.
 
