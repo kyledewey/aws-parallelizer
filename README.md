@@ -20,9 +20,11 @@ of instances can be used, and instances can be added or removed dynamically
 without any penalty.
 
 The command must be able to be invoked like so:
-my_command_name input_file
+```console
+$ my_command_name input_file
+```
 
-...where my_command_name is a user-configurable name of a command (more on
+...where `my_command_name` is a user-configurable name of a command (more on
 that later), and input_file is an input file that is selected by the framework.
 
 If there is a file that is output from the command, then the command must
@@ -128,7 +130,7 @@ your secret key.
 Then run `PrepBucket` to make and upload your files to a bucket of your choice.
 The command works as such:
 ```console
-java PrepBucket bucket_name file_1 file_2 ... file_n
+$ java PrepBucket bucket_name file_1 file_2 ... file_n
 ```
 
 ...where `bucket_name` is the name of your bucket.  If `bucket_name`
@@ -143,9 +145,9 @@ For example, say our analysis script is named `analysis.sh`, and it needs
 the files `foo.txt` and `bar.txt` in order to function.  Then we
 would do:
 ```console
-mkdir environment
-cp analysis.sh foo.txt bar.txt environment
-zip -r environment.zip environment
+$ mkdir environment
+$ cp analysis.sh foo.txt bar.txt environment
+$ zip -r environment.zip environment
 ```
 
 ...which leaves us with the complete environment `environment.zip`.
@@ -163,7 +165,7 @@ same visibility timeout as specified before for the SQS queue creation.**
 
 Once the parameters are added, you can run `BucketToQueue` like so:
 ```console
-java BucketToQueue input_bucket_name queue_name
+$ java BucketToQueue input_bucket_name queue_name
 ```
 
 ...this will examine the files in `input_bucket`.  For each file, it will
@@ -174,7 +176,7 @@ necessary for running `StartInstances` to `parameters.txt` (see
 the "Parameters" section for more on this). Once the parameters are added to 
 `parameters.txt`, run `StartInstances` like so:
 ```console
-java StartInstances number_to_start max_price parameters.txt
+$ java StartInstances number_to_start max_price parameters.txt
 ```
 
 ...where `number_to_start` is the number of instances to start and
@@ -232,6 +234,7 @@ the effort.  If this happens, here is a workaround:
 ### Parameters ###
 Parameters are specified in a file named `parameters.txt`, except for
 `StartInstances` which explicitly asks for its file containing parameters.
+The `parameters.txt` file should be in the same directory as the one you execute commands from.
 There is one parameter per line, in the format:
 ```
 parameter_name=value
@@ -399,18 +402,68 @@ means that the parameter is required as it has no reasonable default.
 The framework expects a certain kind of AMI, as specified through the `imageID`
 parameter.  To make your own AMI that can be used in tandem with `imageID`:
 
-1. Download the AWS parallelizer code (`git clone git://github.com/kyledewey/aws-parallelizer.git`).
-2. Go to the `src/` directory. (`cd aws-parallelizer/src`)
-3. Download [version 1.3.25 of the AWS Java SDK](http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip), putting it in the same directory. (`wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip`).
-4. Unzip the archive (`unzip aws-java-sdk-1.3.25.zip`).
-5. (optional) Remove unnecessary files from the zip file (cuts down size by around 4.5X) (`rm -rf aws-java-sdk-1.3.25/documentation aws-java-sdk-1.3.25/samples`)
-6. Include all the .jar files in the archive in your Java classpath (``export CLASSPATH=.:`find . -name '*.jar' | xargs | tr ' ' ':'` ``).
-7. Compile the code (`javac *.java`)
-8. Start an instance on AWS
+1. Download the AWS parallelizer code
+
+```console
+$ git clone git://github.com/kyledewey/aws-parallelizer.git.
+```
+
+2. Go to the `src/` directory.
+
+```console
+$ cd aws-parallelizer/src
+```
+
+3. Download [version 1.3.25 of the AWS Java SDK](http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip), putting it in the same directory.
+
+```console
+$ wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip.
+```
+
+4. Unzip the archive
+
+```console
+$ unzip aws-java-sdk-1.3.25.zip.
+```
+
+5. (optional) Remove unnecessary files from the zip file (cuts down size by around 4.5X) 
+
+```console
+$ rm -rf aws-java-sdk-1.3.25/documentation aws-java-sdk-1.3.25/samples
+```
+
+6. Include all the `.jar` files in the archive in your Java classpath
+
+```console
+$ export CLASSPATH=.:`find . -name '*.jar' | xargs | tr ' ' ':'``
+```
+
+7. Compile the code
+
+```console
+$ javac *.java
+```
+
+8. Start an instance on AWS (preferably using the management console)
 9. Copy over all `.class` files to the instance, along with `init_stub.sh` and the
    uncompressed AWS Java SDK archive. Put these in the home folder of `ec2-user`.
+
+```console
+$ scp *.class init_stub.sh ec2-user@<AWS instance>:~
+```
+
 10. `SSH` into the machine.
-11. Append the contents of `init_stub.sh` to `/etc/rc.local`. (`cat init_stub.sh >> /etc/rc.local`).
+
+```console
+$ ssh ec2-user@<AWS instance>
+```
+
+11. Append the contents of `init_stub.sh` to `/etc/rc.local`
+
+```console
+$ cat init_stub.sh >> /etc/rc.local
+```
+
 12. From the AWS management console, right click on your instance and choose 
    "Create Image (EBS AMI)"
 13. Once that completes, you'll be able to see your new AMI underneath `IMAGES/AMIs`
