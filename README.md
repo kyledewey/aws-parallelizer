@@ -199,7 +199,7 @@ Once the analysis is complete, instances will start terminating (as long as you'
 them to do so).  At any point, you can download the output files using the `Download`
 command, which has been included.  It can be run like so:
 ```console
-java Download bucket_name
+$ java Download bucket_name
 ```
 
 ...where `bucket_name` is the name of the bucket from which you want to download
@@ -402,70 +402,62 @@ means that the parameter is required as it has no reasonable default.
 The framework expects a certain kind of AMI, as specified through the `imageID`
 parameter.  To make your own AMI that can be used in tandem with `imageID`:
 
-1. Download the AWS parallelizer code
-
+1. Download the AWS parallelizer code.
 ```console
-$ git clone git://github.com/kyledewey/aws-parallelizer.git.
+$ git clone git://github.com/kyledewey/aws-parallelizer.git
 ```
 
 2. Go to the `src/` directory.
-
 ```console
 $ cd aws-parallelizer/src
 ```
 
 3. Download [version 1.3.25 of the AWS Java SDK](http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip), putting it in the same directory.
-
 ```console
 $ wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip.
 ```
 
-4. Unzip the archive
-
+4. Unzip the archive.
 ```console
 $ unzip aws-java-sdk-1.3.25.zip.
 ```
 
-5. (optional) Remove unnecessary files from the zip file (cuts down size by around 4.5X) 
-
+5. (optional) Remove unnecessary files from the zip file (cuts down size by around 4.5X).
 ```console
 $ rm -rf aws-java-sdk-1.3.25/documentation aws-java-sdk-1.3.25/samples
 ```
 
-6. Include all the `.jar` files in the archive in your Java classpath
-
+6. Include all the `.jar` files in the archive in your Java classpath.
 ```console
 $ export CLASSPATH=.:`find . -name '*.jar' | xargs | tr ' ' ':'``
 ```
 
-7. Compile the code
-
+7. Compile the code.
 ```console
 $ javac *.java
 ```
 
-8. Start an instance on AWS (preferably using the management console)
+8. Start an instance on AWS (preferably using the management console).
+
 9. Copy over all `.class` files to the instance, along with `init_stub.sh` and the
    uncompressed AWS Java SDK archive. Put these in the home folder of `ec2-user`.
-
 ```console
 $ scp *.class init_stub.sh ec2-user@<AWS instance>:~
 ```
 
 10. `SSH` into the machine.
-
 ```console
 $ ssh ec2-user@<AWS instance>
 ```
 
-11. Append the contents of `init_stub.sh` to `/etc/rc.local`
-
+11. Append the contents of `init_stub.sh` to `/etc/rc.local`.
 ```console
 $ cat init_stub.sh >> /etc/rc.local
 ```
 
 12. From the AWS management console, right click on your instance and choose 
-   "Create Image (EBS AMI)"
+   "Create Image (EBS AMI)".
+   
 13. Once that completes, you'll be able to see your new AMI underneath `IMAGES/AMIs`
    in the AWS Management Console.  Use the AMI ID for `imageID`.
 
@@ -473,7 +465,9 @@ $ cat init_stub.sh >> /etc/rc.local
 I currently do not have a public version of the AMI I use, since:
 
 1. I would like to test it more for reliability
+
 2. Bundling an AMI for public use is a hassle
+
 3. The AMI bundling guide within the [AWS Documentation](http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/AESDG-chapter-sharingamis.html) does not make me feel confident that I won't somehow accidentally leak my AWS credentials.
 
 At some point in the future I may release this, but it likely won't be any time soon (if at all).
