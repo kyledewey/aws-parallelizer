@@ -414,12 +414,12 @@ $ cd aws-parallelizer/src
 
 3. Download [version 1.3.25 of the AWS Java SDK](http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip), putting it in the same directory.
 ```console
-$ wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip.
+$ wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip
 ```
 
 4. Unzip the archive.
 ```console
-$ unzip aws-java-sdk-1.3.25.zip.
+$ unzip aws-java-sdk-1.3.25.zip
 ```
 
 5. (optional) Remove unnecessary files from the zip file (cuts down size by around 4.5X).
@@ -429,7 +429,7 @@ $ rm -rf aws-java-sdk-1.3.25/documentation aws-java-sdk-1.3.25/samples
 
 6. Include all the `.jar` files in the archive in your Java classpath.
 ```console
-$ export CLASSPATH=.:`find . -name '*.jar' | xargs | tr ' ' ':'``
+$ export CLASSPATH=.:`find . -name '*.jar' | xargs | tr ' ' ':'`
 ```
 
 7. Compile the code.
