@@ -179,10 +179,11 @@ the "Parameters" section for more on this). Once the parameters are added to
 $ java StartInstances number_to_start max_price parameters.txt
 ```
 
-...where `number_to_start` is the number of instances to start and
-`max_price` is the maximum bidding price for spot instances.
-`parameters.txt` must also be specified. 
- The intention is that different parameter files can be used for different kinds of runs.
+A more detailed description of each parameter is below:
+- `number_to_start`: The number of instances to start
+- `max_price`: The maximum bidding price for spot instances, in US dollars.  (i.e. to specify 1.3 US cents, use 0.013)
+- `parameters.txt`: The name of the parameters file to use.  For most setups, this will be `parameters.txt`, as-is. The intention is that different parameter files can be used for different kinds of runs.
+
 Outside of `StartInstances`, the only parameters used off of the cloud are `accessKey` and `secretKey`.
 As such, it is possible to have a special `parameters.txt` that contains only `accessKey` and `secretKey`, and then other parameters files (with names different than `parameters.txt`) that are specific to different kinds of runs you want to perform.
 
