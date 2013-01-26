@@ -312,7 +312,7 @@ means that the parameter is required as it has no reasonable default.
   <tr>
     <td><code>environmentZip</code></td>
     <td>Name of the zip file containing the execution environment.  Must exist within the S3
-      bucket specified by the <code>environmentBucket</code> parameter.</td>
+      bucket specified by the <code>environmentBucket</code> parameter.  This should include the <code>.zip</code> extension, if it has one.</td>
     <td>N/A</td>
   </tr>
 
