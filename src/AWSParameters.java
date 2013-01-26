@@ -380,9 +380,9 @@ public class AWSParameters extends CredentialParameters {
     }
 
     public void prepEnvironment() throws IOException {
-	Download.downloadPrefix( getS3(),
-				 getEnvironmentBucket(),
-				 getEnvironmentZip() );
+	Download.download( getS3(),
+			   getEnvironmentBucket(),
+			   getEnvironmentZip() );
 	JobControl.executeProgram( new String[]{ "unzip", 
 						 getEnvironmentZip() } );
 	JobControl.makeExecutableInDir( getEnvironmentPrefix() );

@@ -200,11 +200,12 @@ Once the analysis is complete, instances will start terminating (as long as you'
 them to do so).  At any point, you can download the output files using the `Download`
 command, which has been included.  It can be run like so:
 ```console
-$ java Download bucket_name
+$ java Download bucket_name local_directory
 ```
 
-...where `bucket_name` is the name of the bucket from which you want to download
-files.
+...where the parameters are:
+- `bucket_name`:  The name of the bucket from which you want to download files.
+- `local_directory`: Name of a directory to which we want to download files.  If it doesn't already exist, it will make one for you.
 
 ### Notes ###
 The following are just some scattered notes about the framework.
