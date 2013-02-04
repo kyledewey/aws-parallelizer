@@ -207,6 +207,13 @@ $ java Download bucket_name local_directory
 - `bucket_name`:  The name of the bucket from which you want to download files.
 - `local_directory`: Name of a directory to which we want to download files.  If it doesn't already exist, it will make one for you.
 
+If you do not want to keep the bucket around, you can delete the bucket with the `DeleteBucket` command.  This is used like so:
+```console
+$ java DeleteBucket bucket_name
+```
+
+...where `bucket_name` is the name of the bucket you want to delete.
+
 ### Notes ###
 The following are just some scattered notes about the framework.
 
