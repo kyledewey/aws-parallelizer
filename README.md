@@ -154,14 +154,9 @@ $ zip -r environment.zip environment
 This file can be uploaded with `PrepBucket`, through the AWS Management Console,
 or with whatever you prefer.
 
-Now the SQS queue needs to be prepped.  Make a new SQS queue in the AWS Management Console,
-and **set the retention period to 14 days and the visibility timeout to whatever you want**.
-Due to a oddity in the AWS APIs, if you don't set these properly things can get very confused,
-as this configuration information is used in identifying SQS queues to some degree.
 
 At this point, you need to add all the parameters needed to run `BucketToQueue`
-(see the "Parameters" section for this) to `parameters.txt`.  **Be sure to use the
-same visibility timeout as specified before for the SQS queue creation.**
+(see the "Parameters" section for this) to `parameters.txt`.
 
 Once the parameters are added, you can run `BucketToQueue` like so:
 ```console
@@ -170,6 +165,10 @@ $ java BucketToQueue input_bucket_name queue_name
 
 ...this will examine the files in `input_bucket`.  For each file, it will
 put an SQS message into the queue `queue_name` containing the name of the file.
+If the queue specified by `queue_name` does not already exist, it will create one 
+with the visibility timeout specified in `parameters.txt` and a 14 day message retention period.
+**Note: AWS can get very confused if you specify multiple queues with the same name but 
+different configuration parameters.  Be sure to use distinct queue names.**
 
 Now for the fun part: starting instances.  For this, you'll need to add all the parameters
 necessary for running `StartInstances` to `parameters.txt` (see 
