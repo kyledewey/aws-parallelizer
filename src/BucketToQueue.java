@@ -14,38 +14,14 @@ import java.io.*;
  * @author Kyle Dewey
  */
 public class BucketToQueue {
-    // begin constants
-    public static final int SECONDS_PER_MINUTE = 60;
-    public static final int MINUTES_PER_HOUR = 60;
-    public static final int HOURS_PER_DAY = 24;
-    public static final int MAX_NUM_DAYS_SQS_ALLOWS = 14;
-    public static final int MAX_RETENTION_PERIOD =
-	SECONDS_PER_MINUTE * MINUTES_PER_HOUR * HOURS_PER_DAY * MAX_NUM_DAYS_SQS_ALLOWS;
-    // end constants
-
     // begin instance variables
     private final AWSParameters params;
+    private final MakeQueue makeQueue;
     // end instance variables
 
     public BucketToQueue( AWSParameters params ) {
 	this.params = params;
-    }
-
-    public CreateQueueRequest makeQueueRequest( String queueName ) {
-	Map< String, String > attrib = new HashMap< String, String >();
-	attrib.put( QueueAttributeName.VisibilityTimeout.name(),
-		    Integer.toString( params.getVisibilityTimeout() ) );
-	attrib.put( QueueAttributeName.MessageRetentionPeriod.name(),
-		    Integer.toString( MAX_RETENTION_PERIOD ) );
-	return new CreateQueueRequest( queueName ).withAttributes( attrib );
-    }
-
-    /**
-     * Creates a queue with the given object.
-     * If the queue already exists, it gets the URL of the existing queue.
-     */
-    public String makeQueue( String queueName ) throws IOException {
-	return params.getSQS().createQueue( makeQueueRequest( queueName ) ).getQueueUrl();
+	this.makeQueue = new MakeQueue( params );
     }
 
     /**
@@ -53,7 +29,7 @@ public class BucketToQueue {
      */
     public String bucketToQueue( String bucketName,
 				 String queueName ) throws IOException {
-	String queueURL = makeQueue( queueName );
+	String queueURL = makeQueue.makeQueue( queueName );
 	for( String fileName : ListBucket.listBucket( params.getS3(), bucketName ) ) {
 	    params.getSQS().sendMessage( new SendMessageRequest( queueURL, fileName ) );
 	}
