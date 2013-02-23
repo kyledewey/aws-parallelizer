@@ -6,6 +6,10 @@ import com.amazonaws.services.sqs.model.*;
 import java.util.*;
 import java.io.*;
 
+/**
+ * Makes an SQS queue, if it does not already exist.
+ * @author Kyle Dewey
+ */
 public class MakeQueue {
     // begin constants
     public static final int SECONDS_PER_MINUTE = 60;
