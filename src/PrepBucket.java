@@ -32,8 +32,8 @@ public class PrepBucket {
     }
 
     public static void main( String[] args ) {
-	if ( args.length < 2 ) {
-	    System.err.println( "Needs a name of the bucket and the files to put in it." );
+	if ( args.length < 1 ) {
+	    System.err.println( "Usage: java PrepBucket bucket_name [file0 file 1 ... fileN]" );
 	    System.exit( 1 );
 	}
 	try {

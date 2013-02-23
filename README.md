@@ -135,7 +135,7 @@ $ java PrepBucket bucket_name file_1 file_2 ... file_n
 
 ...where `bucket_name` is the name of your bucket.  If `bucket_name`
 doesn't already exist, it will create a new bucket with that name.  Each of the
-files specified will be uploaded to that bucket.
+files specified will be uploaded to that bucket.  It is not necessary to provide any files; in this case the behavior is the same but no files are added.
 
 Now make S3 buckets for the environment and for the output files.  Personally I just
 do this through the AWS Management Console.
