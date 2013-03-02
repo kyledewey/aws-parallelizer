@@ -28,7 +28,19 @@ public class KillInstances {
     public List<SpotInstanceRequest> getOpenActiveSpotInstanceRequests() {
 	return params.getEC2()
 	    .describeSpotInstanceRequests( makeSpotRequestRequest() )
-	    getSpotInstanceRequests();
+	    .getSpotInstanceRequests();
+    }
+
+    public List<String> getOpenActiveSpotInstanceRequestIds() {
+	return spotInstanceRequestIds(getOpenActiveSpotInstanceRequests());
+    }
+
+    public static List<String> spotInstanceRequestIds(List<SpotInstanceRequest> requests) {
+	List<String> retval = new ArrayList<String>();
+	for (SpotInstanceRequest request : requests) {
+	    retval.add(request.getSpotInstanceRequestId());
+	}
+	return retval;
     }
 
     public DescribeInstancesRequest makeInstancesRequest() {
@@ -37,11 +49,18 @@ public class KillInstances {
 						     Arrays.asList( "pending", "running" ) ) ) );
     }
 
-    public void cancelSpotInstanceRequests() {
-	params.getEC2()
-	    .cancelSpotInstanceRequests( // STOPPED HERE
+    public CancelSpotInstanceRequestsResult cancelSpotInstanceRequests() {
+	List<String> ids = getOpenActiveSpotInstanceRequestIds();
+	if (!ids.isEmpty()) {
+	    CancelSpotInstanceRequestsRequest request = new CancelSpotInstanceRequestsRequest(ids);
+	    return params.getEC2().cancelSpotInstanceRequests(request);
+	} else {
+	    return null;
+	}
+    }
+
     public List<Instance> getPendingRunningInstances() {
-	List<Instance> retval = new ArrayList<Instance>()
+	List<Instance> retval = new ArrayList<Instance>();
 	List<Reservation> reservations = params.getEC2()
 	    .describeInstances( makeInstancesRequest() )
 	    .getReservations();
@@ -52,3 +71,42 @@ public class KillInstances {
 
 	return retval;
     }
+
+    public List<String> getPendingRunningInstanceIds() {
+	List<Instance> instances = getPendingRunningInstances();
+	return instanceIds(instances);
+    }
+
+    public static List<String> instanceIds(List<Instance> instances) {
+	List<String> retval = new ArrayList<String>();
+	for(Instance instance : instances) {
+	    retval.add(instance.getInstanceId());
+	}
+	return retval;
+    }
+
+    public TerminateInstancesResult terminateInstances() {
+	List<String> ids = getPendingRunningInstanceIds();
+	if (!ids.isEmpty()) {
+	    TerminateInstancesRequest request = new TerminateInstancesRequest(ids);
+	    return params.getEC2().terminateInstances(request);
+	} else {
+	    return null;
+	}
+    }
+
+    public void panicButton() {
+	cancelSpotInstanceRequests();
+	terminateInstances();
+    }
+
+    public static void main(String[] args) {
+	try {
+	    new KillInstances(AWSParameters.makeLocalParameters()).panicButton();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.err.println(e);
+	}
+    }
+} // KillInstances
+
