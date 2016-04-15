@@ -415,58 +415,53 @@ parameter.  To make your own AMI that can be used in tandem with `imageID`:
 $ git clone git://github.com/kyledewey/aws-parallelizer.git
 ```
 
-2. Go to the `src/` directory.
+2. Go to the `aws-parallelizer` directory.
 ```console
-$ cd aws-parallelizer/src
+$ cd aws-parallelizer
 ```
 
-3. Download [version 1.3.25 of the AWS Java SDK](http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip), putting it in the same directory.
+3. Download [version 1.10.69 of the AWS Java SDK](http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.10.69.zip), putting it in the same directory.
 ```console
-$ wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.3.25.zip
+$ wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.10.69.zip
 ```
 
 4. Unzip the archive.
 ```console
-$ unzip aws-java-sdk-1.3.25.zip
+$ unzip aws-java-sdk-1.10.69.zip
 ```
 
 5. (optional) Remove unnecessary files from the zip file (cuts down size by around 4.5X).
 ```console
-$ rm -rf aws-java-sdk-1.3.25/documentation aws-java-sdk-1.3.25/samples
+$ rm -rf aws-java-sdk-1.10.69/documentation aws-java-sdk-1.10.69/samples aws-java-sdk-1.10.69/lib/aws-java-sdk-1.10.69-sources.jar
 ```
 
-6. Include all the `.jar` files in the archive in your Java classpath.
+6. Compile the code.
 ```console
-$ export CLASSPATH=.:`find . -name '*.jar' | xargs | tr ' ' ':'`
+$ make
 ```
 
-7. Compile the code.
-```console
-$ javac *.java
-```
+7. Start an instance on AWS (preferably using the management console).
 
-8. Start an instance on AWS (preferably using the management console).
-
-9. Copy over all `.class` files to the instance, along with `init_stub.sh` and the
+8. Copy over all `.class` files to the instance, along with `init_stub.sh` and the
    uncompressed AWS Java SDK archive. Put these in the home folder of `ec2-user`.
 ```console
-$ scp *.class init_stub.sh ec2-user@<AWS instance>:~
+$ scp classes/*.class init_stub.sh ec2-user@<AWS instance>:~
 ```
 
-10. `SSH` into the machine.
+9. `SSH` into the machine.
 ```console
 $ ssh ec2-user@<AWS instance>
 ```
 
-11. Append the contents of `init_stub.sh` to `/etc/rc.local`.
+10. Append the contents of `init_stub.sh` to `/etc/rc.local`.
 ```console
 $ cat init_stub.sh >> /etc/rc.local
 ```
 
-12. From the AWS management console, right click on your instance and choose 
+11. From the AWS management console, right click on your instance and choose 
    "Create Image (EBS AMI)".
    
-13. Once that completes, you'll be able to see your new AMI underneath `IMAGES/AMIs`
+12. Once that completes, you'll be able to see your new AMI underneath `IMAGES/AMIs`
    in the AWS Management Console.  Use the AMI ID for `imageID`.
 
 ### Pre-made AMI ###
@@ -484,7 +479,7 @@ Additionally, if there is a demand for an AMI it will encourage me to make a pub
 
 ### Disclaimer ###
 There is no guarantee that this will work, and there is absolutely no warranty, implied or otherwise.
-This code might work exactly as I've layed out here, or it may hang indefinitely doing nothing as
+This code might work exactly as I've laid out here, or it may hang indefinitely doing nothing as
 AWS charges you for time.  (At least once this happened due to a bug.)
 
 Personally I check on runs every few hours making sure progress is still being made, 
