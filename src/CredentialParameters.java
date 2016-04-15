@@ -141,12 +141,12 @@ public class CredentialParameters extends Parameters {
 	return listQueuesByUrl().contains( url );
     }
 
-    protected List< Filter > persistentSpotRequestFilters() 
+    protected List< com.amazonaws.services.ec2.model.Filter > persistentSpotRequestFilters() 
 	throws IOException {
-	return Arrays.asList( new Filter( "instance-id",
-					  Arrays.asList( InstanceHelpers.getInstanceId() ) ),
-			      new Filter( "type",
-					  Arrays.asList( "persistent" ) ) );
+	return Arrays.asList( new com.amazonaws.services.ec2.model.Filter( "instance-id",
+                                                                           Arrays.asList( InstanceHelpers.getInstanceId() ) ),
+			      new com.amazonaws.services.ec2.model.Filter( "type",
+                                                                           Arrays.asList( "persistent" ) ) );
     }
 
     protected DescribeSpotInstanceRequestsRequest makeSpotRequestRequest() 
