@@ -4,6 +4,10 @@ import java.util.*;
 import com.amazonaws.services.sqs.model.*;
 
 public abstract class Worker {
+    // begin constants
+    public static String FILE_SEPARATOR = ":";
+    // end constants
+    
     // begin instance variables
     private final AWSParameters parameters;
     // end instance variables
@@ -33,16 +37,12 @@ public abstract class Worker {
 	parameters.deleteMessage( message );
     }
 
-    public void processFile( String fileName ) throws IOException {
-	File inputFile = new File( parameters.getEnvironmentPrefix(),
-				   fileName );
-	parameters.getObject( fileName, inputFile );
-	String outputFileName = parameters.doAnalysis( fileName );
-	if ( !outputFileName.equals( "" ) ) {
+    protected void tryUploadFile(String fileName) throws IOException {
+        if ( !fileName.equals( "" ) ) {
 	    File outputFile = new File( parameters.getEnvironmentPrefix(),
-					outputFileName );
+					fileName );
 	    if ( !outputFile.exists() ) {
-		outputFile = new File( outputFileName );
+		outputFile = new File( fileName );
 	    }
 	    
 	    if ( outputFile.exists() ) {
@@ -50,7 +50,17 @@ public abstract class Worker {
 				      outputFile );
 		outputFile.delete();
 	    }
-	}
+        }
+    }
+
+    public void processFile( String fileName ) throws IOException {
+	File inputFile = new File( parameters.getEnvironmentPrefix(),
+				   fileName );
+	parameters.getObject( fileName, inputFile );
+        String output = parameters.doAnalysis( fileName );
+        for ( String outputFileName : output.split( FILE_SEPARATOR ) ) {
+            tryUploadFile( outputFileName );
+        }
 	inputFile.delete();
     }
 
