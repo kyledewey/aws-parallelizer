@@ -86,9 +86,12 @@ while ( sqsQueue.containsMessages() ) {
   s3InputBucket.getFile( filename );
   String commandOutput = execute( param( ANALYSIS_FILE_NAME ),
                                   filename );
-  if ( isFile( commandOutput ) ) {
-    s3OutputBucket.putFile( commandOutput );
-    deleteFile( commandOutput );
+  String[] fileNames = commandOutput.split( ":" );
+  for ( String fileName : fileNames ) {
+    if ( isFile( fileName ) ) {
+      s3OutputBucket.putFile( commandOutput );
+      deleteFile( commandOutput );
+    }
   }
   sqsQueue.doneWithMessage( message );
   deleteFile( filename );
