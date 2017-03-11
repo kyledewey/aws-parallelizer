@@ -1,0 +1,39 @@
+#!/bin/zsh
+
+if [[ -a aws-java-sdk-1.10.69.zip ]]; then
+	echo "Found aws sdk, no need to download..."
+else
+	echo "No aws sdk found, downloading..."
+	wget http://sdk-for-java.amazonwebservices.com/aws-java-sdk-1.10.69.zip > /dev/null 2>&1
+fi
+
+echo "Unzipping aws sdk..."
+unzip -o aws-java-sdk-1.10.69.zip > /dev/null 2>&1 
+
+echo "Removing unneeded things..."
+rm -rf aws-java-sdk-1.10.69/documentation aws-java-sdk-1.10.69/samples aws-java-sdk-1.10.69/lib/aws-java-sdk-1.10.69-sources.jar
+
+echo "Making..."
+make > /dev/null 2>&1
+
+echo "Removing aws sdk zip..."
+if [[ -a aws-java-sdk-1.10.69.zip ]]; then
+	rm -rf aws-java-sdk-1.10.69.zip
+fi
+
+echo "Copying class files to home..."
+cp classes/*.class ~
+
+# keeping things idempotent helps
+if [[ -a ~/.rc.local.original ]]; then
+	echo "Recovering original rc.local!"
+	cp ~/.rc.local.original /etc/rc.local
+else # backup doesn't exist, so this is first time running this
+	echo "Backing up rc.local!"
+	cp /etc/rc.local ~/.rc.local.original
+fi
+
+echo "Updating rc.local..."
+cat src/init_stub.sh >> /etc/rc.local
+
+echo "Done!"
