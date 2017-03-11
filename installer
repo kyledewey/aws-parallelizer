@@ -36,4 +36,7 @@ fi
 echo "Updating rc.local..."
 cat src/init_stub.sh >> /etc/rc.local
 
+echo "Move aws java sdk to home folder..."
+mv aws-parallelizer/aws-java-sdk-1.10.69 ~
+
 echo "Done!"
